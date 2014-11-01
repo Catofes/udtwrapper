@@ -33,14 +33,14 @@ int udtAcpt(int eid, int uSocket)
 int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 {
 	struct sockaddr_in clientaddr;
-  socklen_t clilen =  sizeof(struct sockaddr_in);
+	socklen_t clilen =  sizeof(struct sockaddr_in);
 	int connfd = accept(tSocket, (sockaddr *)&clientaddr, &clilen);
 	if(connfd < 0) {
 		cout<<"[E] Can't accept TCP connection."<<endl;
 		return -1;
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
-	cout << "Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port)<<endl;
+	cout << "Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << "	socket:"<<connfd<<endl;
 	manage.generate(0, connfd);
 	UDT::epoll_add_ssock(eid, connfd);
 	return connfd;
@@ -66,16 +66,22 @@ int closeUDT(int eid, int uSocket)
 int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt)
 {
 	int size = recv(tSocket, &buffer[PHS], BS-PHS, 0);
-	if(size >= 0){
-		PackageHead * head = (PackageHead *) buffer;
-		if((head->sessionId = manage.getSessionId(tSocket)) > 0){
-			encrypt.encrypt(buffer + PHS, size);
-			head->length = size;
-			int send = udtSend(uSocket, buffer, size + PHS);
-      if(size == 0)
-        UDT::epoll_remove_ssock(eid, tSocket);
-			return send;
+	PackageHead * head = (PackageHead *) buffer;
+	bool disconnect = false;
+	if((head->sessionId = manage.getSessionId(tSocket)) > 0){
+		if(size < 0){
+		  disconnect = true;
+		  size = 0;
 		}
+		encrypt.encrypt(buffer + PHS, size);
+		head->length = size;
+		int send = udtSend(uSocket, buffer, size + PHS);
+		if(size == 0 && !disconnect){
+			cout<<"Send FIN of session:"<<head->sessionId<<endl;
+			UDT::epoll_remove_ssock(eid, tSocket);
+		}
+		if(!disconnect)
+		  return send;
 	}
 	closeTCP(eid, tSocket, 2, manage);
 	return 0;
@@ -108,16 +114,22 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encrypt &encrypt)
 {
 	int size = recv(tSocket, &buffer[PHS], BS-PHS, 0);
-	if(size >= 0){
-		PackageHead * head = (PackageHead*) buffer;
-		if((head->sessionId = manage.getSessionId(tSocket)) > 0){
-			encrypt.encrypt(buffer + PHS, size);
-			head->length = size;
-			int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
-			if(size == 0)
-        UDT::epoll_remove_ssock(eid, tSocket);
-			return send;
+	PackageHead * head = (PackageHead*) buffer;
+	bool disconnect = false;
+	if((head->sessionId = manage.getSessionId(tSocket)) > 0){
+		if(size < 0){
+			disconnect = true;
+			size = 0;
 		}
+		encrypt.encrypt(buffer + PHS, size);
+		head->length = size;
+		int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
+		if(size == 0&&!disconnect){
+			cout<<"Send FIN of session:"<<head->sessionId<<endl;
+			UDT::epoll_remove_ssock(eid, tSocket);
+		}
+		if(!disconnect)
+		  return send;
 	}
 	closeTCP(eid, tSocket, 2, manage);
 	return 0;
@@ -130,6 +142,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 		int tSocket;
 		if((tSocket = manage.gettSocket(0,head->sessionId)) > 0){
 			if(head->length == 0||head->length > BS-PHS){
+				cout<<" Close TCP " << tSocket << endl;
 				closeTCP(eid, tSocket, 2, manage);
 			}
 			if(udtRecv(uSocket, buffer + PHS, head->length)){
