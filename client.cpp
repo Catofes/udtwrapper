@@ -14,41 +14,41 @@ using namespace std;
 
 int clientLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &encrypt)
 {
-  signal(SIGPIPE, signal_callback_handler);
-  int uSocket,tSocket;
-  if((uSocket = udtConnect(remoteAddress, remotePort)) < 0 )
-    exit(1);
-  if((tSocket = tcpListen(listenPort, maxPending)) < 0 )
-    exit(1);
-  SessionManage manage;
-  char buffer[BS];
-  int eid = UDT::epoll_create();
-  UDT::epoll_add_ssock(eid, tSocket);
-  UDT::epoll_add_usock(eid, uSocket);
-  set<UDTSOCKET> readfds;
-  set<int> sreadfds;
-  while(true){
-    int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
-    for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
-        downloadU2T(eid, *i, buffer, manage, encrypt);
-    }
-    for(set<int>::iterator i = sreadfds.begin(); i != sreadfds.end(); ++i){
-      if(*i == tSocket){
-        tcpAcpt(eid, tSocket, manage);
-      }else{
-        uploadT2U(eid, *i, uSocket, buffer, manage, encrypt);
-      }
-    }
-  }
+	signal(SIGPIPE, SIG_IGN);
+	int uSocket,tSocket;
+	if((uSocket = udtConnect(remoteAddress, remotePort)) < 0 )
+	  exit(1);
+	if((tSocket = tcpListen(listenPort, maxPending)) < 0 )
+	  exit(1);
+	SessionManage manage;
+	char buffer[BS];
+	int eid = UDT::epoll_create();
+	UDT::epoll_add_ssock(eid, tSocket);
+	UDT::epoll_add_usock(eid, uSocket);
+	set<UDTSOCKET> readfds;
+	set<int> sreadfds;
+	while(true){
+		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
+		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
+			downloadU2T(eid, *i, buffer, manage, encrypt);
+		}
+		for(set<int>::iterator i = sreadfds.begin(); i != sreadfds.end(); ++i){
+			if(*i == tSocket){
+				tcpAcpt(eid, tSocket, manage);
+			}else{
+				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt);
+			}
+		}
+	}
 }
 
 int main(int argc, char *argv[])
 {
-  Encrypt encrypt;
-  if(argc < 4) {
-        printf("usage: %s listenPort remoteAddress removePort \n",argv[0]);
-        exit(1);
-  }
-  string remoteAddress(argv[2]);
-  clientLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
+	Encrypt encrypt;
+	if(argc < 4) {
+		printf("usage: %s listenPort remoteAddress removePort \n",argv[0]);
+		exit(1);
+	}
+	string remoteAddress(argv[2]);
+	clientLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
 }

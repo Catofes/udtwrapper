@@ -8,7 +8,7 @@
 
 #ifndef _UDTTUNNEL_
 #define _UDTTUNNEL_
-
+void setTimeOut(int tSocket);
 int udtConnect(string remoteAddress, int portNum);
 int udtListen(int portNum, int maxPending);
 int tcpConnect(string remoteAddress, int portNum);

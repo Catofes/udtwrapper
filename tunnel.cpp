@@ -5,6 +5,13 @@
 using namespace std;
 #include "tunnel.h"
 
+void setTimeOut(int tSocket)
+{
+	int nNetTimeout=60000;
+	setsockopt(tSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
+	setsockopt(tSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
+}
+
 int udtConnect(string remoteAddress, int portNum)
 {
 	cout << "[I] UDT Start Connect to " << remoteAddress << ":" << portNum << endl;

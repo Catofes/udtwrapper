@@ -12,6 +12,9 @@ using namespace std;
 #include "encrypt.h"
 #include "epoll.h"
 
+int socketnum = 0;
+int finnum = 0;
+
 void signal_callback_handler(int signum){
 }
 
@@ -20,6 +23,7 @@ int udtAcpt(int eid, int uSocket)
 	int clien=sizeof(socklen_t);
 	struct sockaddr_in clientaddr;
 	int connfd = UDT::accept(uSocket, (sockaddr *)&clientaddr, &clien);
+	setTimeOut(connfd);
 	if(connfd < 0) {
 		cout << "[E] Can't accept UDT connection." << endl;
 		return -1;
@@ -40,7 +44,8 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 		return -1;
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
-	cout << "Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << "	socket:"<<connfd<<endl;
+//	socketnum++;
+//	cout << "Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << "	socket:"<<connfd<<"	socketNum:"<<socketnum<<endl;
 	manage.generate(0, connfd);
 	UDT::epoll_add_ssock(eid, connfd);
 	return connfd;
@@ -51,6 +56,8 @@ int closeTCP(int eid, int tSocket, int num, SessionManage &manage)
 	if(manage.getSessionId(tSocket) > 0){
 		manage.remove(tSocket);
 		UDT::epoll_remove_ssock(eid, tSocket);
+		socketnum--;
+		cout<<"Close TCP:"<<tSocket<<endl;
 		shutdown(tSocket, num);
 	}
 	return 0;
@@ -76,8 +83,11 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 		encrypt.encrypt(buffer + PHS, size);
 		head->length = size;
 		int send = udtSend(uSocket, buffer, size + PHS);
+//		if(size == 0){
+//			finnum++;
+//			cout<<"Send FIN of session:"<<head->sessionId<<"	FinNum:"<<finnum<<endl;
+//		}
 		if(size == 0 && !disconnect){
-			cout<<"Send FIN of session:"<<head->sessionId<<endl;
 			UDT::epoll_remove_ssock(eid, tSocket);
 		}
 		if(!disconnect)
@@ -94,11 +104,14 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 		int tSocket;
 		if((tSocket = manage.gettSocket(uSocket, head->sessionId)) == -1){
 			tSocket = tcpConnect(remoteAddress, portNum);
+			setTimeOut(tSocket);
+//			socketnum++;
+//			cout<<"New TCP Connect:"<<tSocket<<" SocketNum:"<<socketnum<< endl;
 			UDT::epoll_add_ssock(eid, tSocket);
 			manage.add(uSocket, head->sessionId, tSocket);
 		}
 		if(head->length == 0||head->length > BS-PHS){
-			closeTCP(eid, tSocket, 1, manage);
+			shutdown(tSocket,1);			
 			return 0;
 		}
 		if(udtRecv(uSocket, buffer + PHS, head->length) == head->length){
@@ -124,8 +137,11 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 		encrypt.encrypt(buffer + PHS, size);
 		head->length = size;
 		int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
+//		if(size == 0){
+//			finnum++;
+//			cout<<"Send FIN of session:"<<head->sessionId<<"	FinNum:"<<finnum<<endl;
+//		}
 		if(size == 0&&!disconnect){
-			cout<<"Send FIN of session:"<<head->sessionId<<endl;
 			UDT::epoll_remove_ssock(eid, tSocket);
 		}
 		if(!disconnect)
@@ -142,7 +158,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 		int tSocket;
 		if((tSocket = manage.gettSocket(0,head->sessionId)) > 0){
 			if(head->length == 0||head->length > BS-PHS){
-				cout<<" Close TCP " << tSocket << endl;
 				closeTCP(eid, tSocket, 2, manage);
 			}
 			if(udtRecv(uSocket, buffer + PHS, head->length)){
