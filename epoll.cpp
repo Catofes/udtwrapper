@@ -258,16 +258,22 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 
 	//Read PackageHead.
 	//Set UDT_RECVTIMEO
-	int timeout = 1;
-	UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
+	//int timeout = 1;
+	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
+	bool blocking = false;
+	UDT::setsockopt(uSocket, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	int receivebyte = udtRecv(uSocket, buffer, PHS);
 
 	if(receivebyte < 0){
+#ifdef DEBUG
 		cout<<"Error Sig Happend"<<endl;
 		return 0;
+#endif 
 	}
-	timeout = -1;		
-	UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
+	//timeout = -1;		
+	blocking = true;
+	UDT::setsockopt(uSocket, 0, UDT_RCVSYN, &blocking, sizeof(bool));
+	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
 	//No tSocket get. Client get a error Data. Remove the Data.
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
