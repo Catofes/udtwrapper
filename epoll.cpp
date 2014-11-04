@@ -140,6 +140,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	//Check If UDT have and error.
 	if(UDT::getlasterror_code() != 0){
 		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+		closeUDT(eid, uSocket, manage);
 		return 0;
 	}
 
