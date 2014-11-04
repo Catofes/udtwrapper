@@ -152,7 +152,14 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	*/
 
 	//Read PackageHead.
-	udtRecv(uSocket, buffer, PHS);
+	int receivebytes = udtRecv(uSocket, buffer, PHS);
+	
+	if(receivebytes <= 0){
+		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+                UDT::getlasterror().clear();
+                closeUDT(eid, uSocket, manage);
+                return 0;
+	}
 
 	int tSocket;
 	//If sessionId is new, Setup new tcp connection.
