@@ -142,12 +142,14 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	   */
 
 	//Check If UDT have and error.
+	/*
 	if(UDT::getlasterror_code() != 0){
 		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
 		UDT::getlasterror().clear();
 		closeUDT(eid, uSocket, manage);
 		return 0;
 	}
+	*/
 
 	//Read PackageHead.
 	udtRecv(uSocket, buffer, PHS);
@@ -239,11 +241,13 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	 */
 
 	//Check If UDT have and error.
+	/*
 	if(UDT::getlasterror_code() != 0){
 		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
 		UDT::getlasterror().clear();
 		return 0;
 	}
+	*/
 
 	//Read PackageHead.
 	int receivebyte = udtRecv(uSocket, buffer, PHS);
