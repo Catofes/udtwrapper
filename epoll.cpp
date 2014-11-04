@@ -1,4 +1,3 @@
-#define DEBUG
 #include <iostream>
 #include <signal.h>
 #include <udt/udt.h>
@@ -267,8 +266,8 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	if(receivebyte < 0){
 #ifdef DEBUG
 		cout<<"Error Sig Happend"<<endl;
-		return 0;
 #endif 
+	return 0;
 	}
 	//timeout = -1;		
 	blocking = true;
