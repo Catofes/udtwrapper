@@ -39,6 +39,8 @@ int SessionManage::add(int uSocket, int sessionId, int tSocket)
   ClientInfo data;
   data.sessionId = sessionId;
   data.uSocket = uSocket;
+  data.onread = true;
+  data.onwrite = true;
   clientinfo_tsocket[data]=tSocket;
   tsocket_clientinfo[tSocket]=data;
   return 0;
@@ -56,12 +58,30 @@ int SessionManage::generate(int uSocket, int tSocket)
   return data.sessionId;
 }
 
+int SessionManage::rremove(int tSocket)
+{
+  if(tsocket_clientinfo.find(tSocket) == tsocket_clientinfo.end())
+    return -1;
+  tsocket_clientinfo[tSocket].onread = false;
+  remove(tSocket);
+}
+
+int SessionManage::wremove(int tSocket)
+{
+  if(tsocket_clientinfo.find(tSocket) == tsocket_clientinfo.end())
+    return -1;
+  tsocket_clientinfo[tSocket].onwrite = false;
+  remove(tSocket);
+}
+
 int SessionManage::remove(int tSocket)
 {
   if(tsocket_clientinfo.find(tSocket) == tsocket_clientinfo.end())
     return -1;
+    if(tsocket_clientinfo[tSocket].onread == false && tsocket_clientinfo[tSocket].onwrite == false){
   clientinfo_tsocket.erase(tsocket_clientinfo.find(tSocket)->second);
   tsocket_clientinfo.erase(tSocket);
+}
   return 0;
 }
 

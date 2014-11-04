@@ -15,6 +15,8 @@ struct ClientInfo
 {
   int uSocket;    //the udt socket num of the connection.
   int sessionId;  //the session id of the same connection.
+  bool onread;
+  bool onwrite;
 };
 
 bool operator < (const ClientInfo &l, const ClientInfo &r);
@@ -25,10 +27,12 @@ private:
   map<ClientInfo, int> clientinfo_tsocket;
   map<int, ClientInfo> tsocket_clientinfo;
   int randomSessionId();
+  int remove(int tSocket);
 public:
   SessionManage();
   int add(int uSocket, int sessionId, int tSocket);
-  int remove(int tSocket);
+  int rremove(int tSocket);
+  int wremove(int tSocket);
   int generate(int uSocket, int tSocket);
   int gettSocket(int uSocket, int sessionId);
   int getuSocket(int tSocket);
