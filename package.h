@@ -24,7 +24,7 @@ struct PackageHead
 } __attribute__((packed));
 
 const int PHS = sizeof(PackageHead);
-const int BS = 2048;
+const int BS = 204800;
 const int maxPending = 1024;
 
 

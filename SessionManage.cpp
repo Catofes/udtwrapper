@@ -51,6 +51,8 @@ int SessionManage::generate(int uSocket, int tSocket)
   ClientInfo data;
   data.uSocket = uSocket;
   data.sessionId = randomSessionId();
+  data.onread = true;
+  data.onwrite = true;
   while(clientinfo_tsocket.find(data) != clientinfo_tsocket.end())
     data.sessionId = randomSessionId();
   clientinfo_tsocket[data]=tSocket;

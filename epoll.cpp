@@ -104,7 +104,6 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 	if(size <= 0){
 		UDT::epoll_remove_ssock(eid, tSocket);
 		shutdown(tSocket,0);
-		manage.rremove(tSocket);
 		size = 0;
 	}
 	head->length = size;
@@ -116,7 +115,12 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 #ifdef DEBUG
 	cout<<"[D] UploadT2U send. Size:"<<size<<endl;
 #endif
-	return udtSend(uSocket, buffer, size + PHS);
+	int send = udtSend(uSocket, buffer, size + PHS);
+
+	if(size == 0)
+		manage.rremove(tSocket);
+	
+	return send;
 }
 
 int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string remoteAddress, int portNum, Encrypt &encrypt)
@@ -140,6 +144,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	//Check If UDT have and error.
 	if(UDT::getlasterror_code() != 0){
 		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+		UDT::getlasterror().clear();
 		closeUDT(eid, uSocket, manage);
 		return 0;
 	}
@@ -196,7 +201,6 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 	if(size <= 0){
 		UDT::epoll_remove_ssock(eid, tSocket);
 		shutdown(tSocket, 0);
-		manage.rremove(tSocket);
 		size = 0;
 	}
 	head->length = size;
@@ -208,7 +212,12 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 	cout<<"[D] DownloadT2U send. Size:"<<size<<endl;
 #endif
-	return udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
+	int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
+	
+	if(size == 0)
+		manage.rremove(tSocket);
+		
+	return send;
 }
 
 int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt)
@@ -227,20 +236,21 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	   int res = UDT::select(0, &readfds, NULL, NULL, &tv);
 	   if (!((res != UDT::ERROR) && (UD_ISSET(u, &readfds))))
 	   return ;//No Data Input.
-	   */
+	 */
 
 	//Check If UDT have and error.
 	if(UDT::getlasterror_code() != 0){
 		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+		UDT::getlasterror().clear();
 		return 0;
 	}
 
 	//Read PackageHead.
-	udtRecv(uSocket, buffer, PHS);
-
+	int receivebyte = udtRecv(uSocket, buffer, PHS);
+	
 	//No tSocket get. Client get a error Data. Remove the Data.
 	int tSocket;
-	if((tSocket = manage.gettSocket(0,head->sessionId)) < 0){
+	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
 		udtRecv(uSocket, buffer + PHS, head->length);
 		return 0;
 	}
