@@ -67,7 +67,7 @@ int tcpConnect(string remoteAddress, int portNum)
 {
 	int sock;
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		cout << "[E] Could not create Socket." << endl;
+		cout << "[E] Could not create Socket. Code at:"<<sock << endl;
 		return -1;
 	}
 	sockaddr_in remote;
@@ -91,7 +91,7 @@ int tcpListen(int portNum, int maxPending)
 	int sock;
 	sockaddr_in local;
 	if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		cout << "[E] Could not create socket." << endl;
+		cout << "[E] Could not create socket. Code at:"<<sock << endl;
 		return -1;
 	}
 	local.sin_family = AF_INET;
