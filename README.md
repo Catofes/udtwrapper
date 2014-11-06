@@ -22,6 +22,7 @@ TODO List:
 
 * Client Auto Reconnect.
 * IPv6 Support.
+* Encrypt Support.
 
 Bug To Fix:
 

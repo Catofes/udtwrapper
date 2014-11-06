@@ -11,11 +11,11 @@ using namespace std;
 #include "encrypt.h"
 #include "epoll.h"
 
-int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &encrypt)
+int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &encrypt, bool IPV6 = false)
 {
 	signal(SIGPIPE, SIG_IGN);
 	int uSocket;
-	if((uSocket = udtListen(listenPort, maxPending)) < 0 )
+	if((uSocket = udtListen(listenPort, maxPending, IPV6)) < 0 )
 	  exit(1);
 	SessionManage manage;
 	char buffer[BS];
@@ -45,6 +45,11 @@ int main(int argc, char *argv[])
 		printf("usage: %s listenPort remoteAddress removePort \n",argv[0]);
 		exit(1);
 	}
-	string remoteAddress(argv[2]);
-	serverLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
+	if(string(argv[1])=="-6"){
+		string remoteAddress(argv[3]);
+		serverLoop(atoi(argv[2]), remoteAddress, atoi(argv[4]),encrypt, true);
+	}else{
+		string remoteAddress(argv[2]);
+		serverLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
+	}
 }

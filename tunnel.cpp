@@ -12,10 +12,32 @@ void setTimeOut(int tSocket)
 	setsockopt(tSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
 }
 
-int udtConnect(string remoteAddress, int portNum)
+int udtConnect(string remoteAddress, int portNum, bool IPV6)
 {
 	cout << "[I] UDT Start Connect to " << remoteAddress << ":" << portNum << endl;
 	int sock;
+	if(IPV6){
+		if((sock = UDT::socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+			cout << "[E] Could not create UDT Socket." << endl;
+			return -1;
+		}
+		sockaddr_in6 remote;
+		memset(&remote, '\0', sizeof(remote));
+		if(inet_pton(AF_INET6, remoteAddress.c_str(), &(remote.sin6_addr)) == 0) {
+			cout << "[E] Wrong Ip Address." << endl;
+			return -2;
+		}
+		remote.sin6_family = AF_INET6;
+		remote.sin6_port = htons(portNum);
+		if(UDT::ERROR == UDT::connect(sock, (sockaddr*) &(remote), sizeof(remote))) {
+			cout << "[E] UDT connection failed." << endl;
+			cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
+			return -3;
+		}
+		cout << "[I] UDT connect successfully." << endl;
+		return sock;
+
+	}else{
 	if((sock = UDT::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		cout << "[E] Could not create UDT Socket." << endl;
 		return -1;
@@ -35,12 +57,36 @@ int udtConnect(string remoteAddress, int portNum)
 	}
 	cout << "[I] UDT connect successfully." << endl;
 	return sock;
+	}	
 }
 
-int udtListen(int portNum, int maxPending)
+int udtListen(int portNum, int maxPending, bool IPV6)
 {
 	cout << "[I] UDT start to listen localport: " << portNum << endl;
 	int sock;
+	if(IPV6){
+		sockaddr_in6 local;
+		memset(&(local), '\0', sizeof(local));
+		if((sock = UDT::socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
+			cout << "[E] Could not create UDT Socket." << endl;
+			return -1;
+		}
+		local.sin6_family = AF_INET6;
+		local.sin6_port = htons(portNum);
+		local.sin6_addr = in6addr_any;
+		if(UDT::ERROR == UDT::bind(sock, (sockaddr*) &local, sizeof(local))) {
+			cout << "[E] UDT bind failed." << endl;
+			cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
+			return -2;
+		}
+		if (UDT::ERROR == UDT::listen(sock, maxPending)) {
+			cout << "[E] Listen error." << endl;
+			return -3;
+		}
+		cout << "[I] UDT listen sucessfully." << endl;
+		return sock;
+
+	}
 	sockaddr_in local;
 	if((sock = UDT::socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
 		cout << "[E] Could not create UDT Socket." << endl;
@@ -135,8 +181,8 @@ int udtRecvNoBlock(int sock, char *buffer, int size)
 		if(UDT::getlasterror_code() != 6002)
 		  return -1;
 		else{
-		  //cout<<"Sig Error."<<endl;
-		  return -2;
+			//cout<<"Sig Error."<<endl;
+			return -2;
 		}
 	}
 	size -= ret;
