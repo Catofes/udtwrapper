@@ -2,6 +2,7 @@
 #include <udt/udt.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <errno.h>
 using namespace std;
 #include "tunnel.h"
 
@@ -113,7 +114,7 @@ int tcpConnect(string remoteAddress, int portNum)
 {
 	int sock;
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		cout << "[E] Could not create Socket. Code at:"<<sock << endl;
+		cout << "[E] Could not create Socket. Code at:"<<errno << endl;
 		return -1;
 	}
 	sockaddr_in remote;

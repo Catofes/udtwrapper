@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <errno.h>
 using namespace std;
 
 #include "package.h"
@@ -64,7 +65,7 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 #endif
 	int connfd = accept(tSocket, (sockaddr *)&clientaddr, &clilen);
 	if(connfd < 0) {
-		cout<<"[E] Can't accept TCP connection."<<connfd<<endl;
+		cout<<"[E] Can't accept TCP connection."<<errno<<endl;
 		return -1;
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
