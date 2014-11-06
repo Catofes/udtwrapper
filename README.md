@@ -20,8 +20,8 @@ Client: run `./client.out 10000 server_ip 10000`. Then set broswer's socks5 to 1
 
 TODO List:
 
+* -IPv6 Support.- (Worked. add -6 parameter follow client.out and server.out)
 * Client Auto Reconnect.
-* IPv6 Support.
 * Encrypt Support.
 
 Bug To Fix:
