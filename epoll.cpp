@@ -16,23 +16,43 @@ using namespace std;
 void signal_callback_handler(int signum){
 }
 
-int udtAcpt(int eid, int uSocket)
+int udtAcpt(int eid, int uSocket, bool IPV6)
 {
-	int clien=sizeof(socklen_t);
-	struct sockaddr_in clientaddr;
+	if(IPV6){
+		struct sockaddr_in6 clientaddr;
+		int clien=sizeof(clientaddr);
 #ifdef DEBUG
-	cout << "[D] Start Accept UDT." << endl;
+		cout << "[D] Start Accept UDT." << endl;
 #endif
-	int connfd = UDT::accept(uSocket, (sockaddr *)&clientaddr, &clien);
-	setTimeOut(connfd);
-	if(connfd < 0) {
-		cout << "[E] Can't accept UDT connection." << endl;
-		return -1;
+		int connfd = UDT::accept(uSocket, (sockaddr *)&clientaddr, &clien);
+		setTimeOut(connfd);
+		if(connfd < 0) {
+			cout << "[E] Can't accept UDT connection." << endl;
+			return -1;
+		}
+		char str[40];
+		inet_ntop(AF_INET6, &clientaddr.sin6_addr,str,sizeof(str));
+		cout << "[I] Accpet a UDT connection form " << str << ":" << ntohs(clientaddr.sin6_port) << endl;
+		UDT::epoll_add_usock(eid, connfd);
+		return connfd;
+
+	}else{
+		int clien=sizeof(socklen_t);
+		struct sockaddr_in clientaddr;
+#ifdef DEBUG
+		cout << "[D] Start Accept UDT." << endl;
+#endif
+		int connfd = UDT::accept(uSocket, (sockaddr *)&clientaddr, &clien);
+		setTimeOut(connfd);
+		if(connfd < 0) {
+			cout << "[E] Can't accept UDT connection." << endl;
+			return -1;
+		}
+		char *str = inet_ntoa(clientaddr.sin_addr);
+		cout << "[I] Accpet a UDT connection form " << str << ":" << ntohs(clientaddr.sin_port) << endl;
+		UDT::epoll_add_usock(eid, connfd);
+		return connfd;
 	}
-	char *str = inet_ntoa(clientaddr.sin_addr);
-	cout << "[I] Accpet a UDT connection form " << str << ":" << ntohs(clientaddr.sin_port) << endl;
-	UDT::epoll_add_usock(eid, connfd);
-	return connfd;
 }
 
 int tcpAcpt(int eid, int tSocket, SessionManage &manage)
@@ -118,8 +138,8 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 	int send = udtSend(uSocket, buffer, size + PHS);
 
 	if(size == 0)
-		manage.rremove(tSocket);
-	
+	  manage.rremove(tSocket);
+
 	return send;
 }
 
@@ -143,13 +163,13 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 
 	//Check If UDT have and error.
 	/*
-	if(UDT::getlasterror_code() != 0){
-		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
-		UDT::getlasterror().clear();
-		closeUDT(eid, uSocket, manage);
-		return 0;
-	}
-	*/
+	   if(UDT::getlasterror_code() != 0){
+	   cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+	   UDT::getlasterror().clear();
+	   closeUDT(eid, uSocket, manage);
+	   return 0;
+	   }
+	   */
 
 	//Read PackageHead.
 
@@ -162,9 +182,9 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 
 	if(receivebytes == -1 ){
 		cout<<"[E] UDT ERROR.Socks:"<<uSocket<<"	At code:"<<UDT::getlasterror_code()<<endl;
-                UDT::getlasterror().clear();
-                closeUDT(eid, uSocket, manage);
-                return 0;
+		UDT::getlasterror().clear();
+		closeUDT(eid, uSocket, manage);
+		return 0;
 	}
 	//if no data receive and no error happend
 
@@ -175,9 +195,9 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 		setTimeOut(tSocket);
 		UDT::epoll_add_ssock(eid, tSocket);
 		manage.add(uSocket, head->sessionId, tSocket);
-	#ifdef DEBUG
+#ifdef DEBUG
 		cout<<"[D] SessionManage Size:"<<manage.getsize()<<endl;
-	#endif
+#endif
 	}
 
 	//If length = 0 . Means Stop Write on a TCP.
@@ -232,10 +252,10 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 	cout<<"[D] DownloadT2U send. Size:"<<size<<endl;
 #endif
 	int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
-	
+
 	if(size == 0)
-		manage.rremove(tSocket);
-		
+	  manage.rremove(tSocket);
+
 	return send;
 }
 
@@ -255,16 +275,16 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	   int res = UDT::select(0, &readfds, NULL, NULL, &tv);
 	   if (!((res != UDT::ERROR) && (UD_ISSET(u, &readfds))))
 	   return ;//No Data Input.
-	 */
+	   */
 
 	//Check If UDT have and error.
 	/*
-	if(UDT::getlasterror_code() != 0){
-		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
-		UDT::getlasterror().clear();
-		return 0;
-	}
-	*/
+	   if(UDT::getlasterror_code() != 0){
+	   cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+	   UDT::getlasterror().clear();
+	   return 0;
+	   }
+	   */
 
 	//Read PackageHead.
 	//Set UDT_RECVTIMEO
@@ -276,7 +296,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 		cout<<"Error Sig Happend"<<endl;
 #endif 
-	return 0;
+		return 0;
 	}
 	//timeout = -1;		
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));

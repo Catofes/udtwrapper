@@ -1,7 +1,7 @@
 #ifndef _EPOLL_
 #define _EPOLL_
 void signal_callback_handler(int signum);
-int udtAcpt(int eid, int uSocket);
+int udtAcpt(int eid, int uSocket,bool IPV6);
 int tcpAcpt(int eid, int tSocket, SessionManage &manage);
 int closeTCP(int eid, int tSocket, SessionManage &manage);
 int closeUDT(int eid, int uSocket);

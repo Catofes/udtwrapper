@@ -27,7 +27,7 @@ int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &en
 		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
 		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
 			if(*i == uSocket){
-				udtAcpt(eid, uSocket);
+				udtAcpt(eid, uSocket,IPV6);
 			}else{
 				uploadU2T(eid, *i, buffer, manage, remoteAddress, remotePort, encrypt);
 			}
