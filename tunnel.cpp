@@ -128,7 +128,7 @@ int udtRecvNoBlock(int sock, char *buffer, int size)
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	UDT::getlasterror().clear();
 	int index=0;
-	int ret=UDT::send(sock, &buffer[index], size, 0);
+	int ret=UDT::recv(sock, &buffer[index], size, 0);
 	blocking = true;
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	if(ret == UDT::ERROR){
