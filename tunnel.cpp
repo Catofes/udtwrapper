@@ -135,7 +135,7 @@ int udtRecvNoBlock(int sock, char *buffer, int size)
 		if(UDT::getlasterror_code() != 6002)
 		  return -1;
 		else{
-		  cout<<"Sig Error."<<endl;
+		  //cout<<"Sig Error."<<endl;
 		  return -2;
 		}
 	}
