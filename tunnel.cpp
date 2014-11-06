@@ -131,12 +131,13 @@ int udtRecvNoBlock(int sock, char *buffer, int size)
 	int ret=UDT::recv(sock, &buffer[index], size, 0);
 	blocking = true;
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
-	if(ret == UDT::ERROR){
-		cout<<"Sig Error"<<endl;
+	if(ret <= 0){
 		if(UDT::getlasterror_code() != 6002)
 		  return -1;
-		else
+		else{
+		  cout<<"Sig Error."<<endl;
 		  return -2;
+		}
 	}
 	size -= ret;
 	index += ret;
