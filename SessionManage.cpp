@@ -110,3 +110,8 @@ int SessionManage::getuSocket(int tSocket)
     return tsocket_clientinfo[tSocket].uSocket;
   return -1;
 }
+
+int SessionManage::getsize()
+{
+	return tsocket_clientinfo.size();
+}

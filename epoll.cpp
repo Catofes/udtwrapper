@@ -1,3 +1,4 @@
+#define DEBUG
 #include <iostream>
 #include <signal.h>
 #include <udt/udt.h>
@@ -151,14 +152,21 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	*/
 
 	//Read PackageHead.
-	int receivebytes = udtRecv(uSocket, buffer, PHS);
-	
-	if(receivebytes <= 0){
-		cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
+
+	int receivebytes = udtRecvNoBlock(uSocket, buffer, PHS);
+	//check error
+	if(receivebytes == -2)
+	{
+		return 0;
+	}
+
+	if(receivebytes == -1 ){
+		cout<<"[E] UDT ERROR.Socks:"<<uSocket<<"	At code:"<<UDT::getlasterror_code()<<endl;
                 UDT::getlasterror().clear();
                 closeUDT(eid, uSocket, manage);
                 return 0;
 	}
+	//if no data receive and no error happend
 
 	int tSocket;
 	//If sessionId is new, Setup new tcp connection.
@@ -167,6 +175,9 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 		setTimeOut(tSocket);
 		UDT::epoll_add_ssock(eid, tSocket);
 		manage.add(uSocket, head->sessionId, tSocket);
+	#ifdef DEBUG
+		cout<<"[D] SessionManage Size:"<<manage.getsize()<<endl;
+	#endif
 	}
 
 	//If length = 0 . Means Stop Write on a TCP.
@@ -259,9 +270,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	//Set UDT_RECVTIMEO
 	//int timeout = 1;
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
-	bool blocking = false;
-	UDT::setsockopt(uSocket, 0, UDT_RCVSYN, &blocking, sizeof(bool));
-	int receivebyte = udtRecv(uSocket, buffer, PHS);
+	int receivebyte = udtRecvNoBlock(uSocket, buffer, PHS);
 
 	if(receivebyte < 0){
 #ifdef DEBUG
@@ -270,8 +279,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	return 0;
 	}
 	//timeout = -1;		
-	blocking = true;
-	UDT::setsockopt(uSocket, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
 	//No tSocket get. Client get a error Data. Remove the Data.
 	int tSocket;

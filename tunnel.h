@@ -15,6 +15,7 @@ int tcpConnect(string remoteAddress, int portNum);
 int tcpListen(int portNum, int maxPending);
 
 int udtRecv(int sock, char *buffer, int size);
+int udtRecvNoBlock(int sock, char *buffer, int size);
 int udtSend(int sock, const char *buffer, int size);
 int tcpRecv(int sock, char *buffer, int size);
 int tcpSend(int sock, const char *buffer, int size);

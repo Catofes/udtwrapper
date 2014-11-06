@@ -37,6 +37,7 @@ public:
   int gettSocket(int uSocket, int sessionId);
   int getuSocket(int tSocket);
   int getSessionId(int tSocket);
+  int getsize();
 };
 
 #endif
