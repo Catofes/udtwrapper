@@ -125,26 +125,28 @@ int udtRecv(int sock, char *buffer, int size)
 int udtRecvNoBlock(int sock, char *buffer, int size)
 {
 	bool blocking = false;
-        UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
-        UDT::getlasterror().clear();
-	int index=0,ret ;
-	if((ret=UDT::send(sock, &buffer[index], size, 0) == UDT::ERROR)){
-		if(UDT::getlasterror_code() != 6002)
-			return -1;
-		else
-			return -2;
-	}
+	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
+	UDT::getlasterror().clear();
+	int index=0;
+	int ret=UDT::send(sock, &buffer[index], size, 0);
 	blocking = true;
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
+	if(ret == UDT::ERROR){
+		cout<<"Sig Error"<<endl;
+		if(UDT::getlasterror_code() != 6002)
+		  return -1;
+		else
+		  return -2;
+	}
 	size -= ret;
 	index += ret;
-	while(size) {
-                if((ret = UDT::recv(sock, &buffer[index], size, 0)) <= 0)
-                  return (!ret) ? index : -1;
-                index += ret;
-                size -= ret;
-        }
-        return index;
+	while(size > 0) {
+		if((ret = UDT::recv(sock, &buffer[index], size, 0)) <= 0)
+		  return (!ret) ? index : -1;
+		index += ret;
+		size -= ret;
+	}
+	return index;
 }
 
 int udtSend(int sock, const char *buffer, int size)
