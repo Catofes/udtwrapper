@@ -189,8 +189,6 @@ int udtRecvNoBlock(int eid, int sock, char *buffer, int size)
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	if(ret <= 0){
 		if(UDT::getlasterror_code() != 6002){
-			UDT::epoll_remove_usock(eid,sock);
-			UDT::epoll_add_usock(eid,sock);
 			return -1;
 		}
 		else{
