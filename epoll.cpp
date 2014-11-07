@@ -1,3 +1,11 @@
+/****************************
+	Name:         UdtWrapper
+	Author:       Catofes
+	Date:         2014-11-1
+	License:      All Right Reserved
+	Description:  A tunnel to exchange tcp stream via udt.
+*****************************/
+
 #define DEBUG
 #include <iostream>
 #include <signal.h>
@@ -6,6 +14,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <unistd.h>
 using namespace std;
 
 #include "package.h"
@@ -13,13 +22,15 @@ using namespace std;
 #include "tunnel.h"
 #include "encrypt.h"
 #include "epoll.h"
+#include "config.h"
+
 
 void signal_callback_handler(int signum){
 }
 
-int udtAcpt(int eid, int uSocket, bool IPV6)
+int udtAcpt(int eid, int uSocket, Config &config)
 {
-	if(IPV6){
+	if(config.IPV6){
 		struct sockaddr_in6 clientaddr;
 		int clien=sizeof(clientaddr);
 #ifdef DEBUG
@@ -69,7 +80,7 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 		return -1;
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
-	cout << "[D] Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << endl; 
+	cout << "[D] Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << endl;
 	manage.generate(0, connfd);
 	UDT::epoll_add_ssock(eid, connfd);
 	return connfd;
@@ -106,7 +117,7 @@ int closeUDT(int eid, int uSocket, SessionManage &mange)
 }
 
 
-int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt)
+int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt, Config &config)
 {
 #ifdef DEBUG
 	cout<<"[D] UploadT2U SIG UP."<<endl;
@@ -116,7 +127,7 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 
 	//Check if the tSocket is closed. This things SHOULD NEVER happend.
 	if((head->sessionId = manage.getSessionId(tSocket)) < 0){
-		cout<<"[B] Closed Socket get data."<<endl; 
+		cout<<"[B] Closed Socket get data."<<endl;
 		closeTCP(eid, tSocket, 2, manage);
 		return 0;
 	}
@@ -141,10 +152,28 @@ int uploadT2U(int eid, int tSocket, int uSocket, char* buffer, SessionManage &ma
 	if(size == 0)
 	  manage.rremove(tSocket);
 
+	if(send == UDT::ERROR)
+	{
+		cout << "[E] UDT Connection lost." << endl;
+		//prepare to reconnect.
+		UDT::close(uSocket);
+		UDT::epoll_remove_usock(eid, uSocket);
+		UDT::epoll_remove_ssock(eid, tSocket);
+		shutdown(tSocket, 2);
+		int newuSocket = 0;
+		while(newuSocket <= 0)
+		{
+			cout<<"[E] Try to Reconnect to Server." <<endl;
+			sleep(3);
+			newuSocket = udtConnect(config);
+		}
+		uSocket = newuSocket;
+		UDT::epoll_add_usock(eid, uSocket);
+	}
 	return send;
 }
 
-int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string remoteAddress, int portNum, Encrypt &encrypt)
+int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt, Config &config)
 {
 	PackageHead * head = (PackageHead*) buffer;
 #ifdef DEBUG
@@ -192,7 +221,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, string 
 	int tSocket;
 	//If sessionId is new, Setup new tcp connection.
 	if((tSocket = manage.gettSocket(uSocket, head->sessionId)) == -1){
-		tSocket = tcpConnect(remoteAddress, portNum);
+		tSocket = tcpConnect(config);
 		setTimeOut(tSocket);
 		UDT::epoll_add_ssock(eid, tSocket);
 		manage.add(uSocket, head->sessionId, tSocket);
@@ -232,12 +261,12 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 
 	//Check if the tSocket is closed. This things SHOULD NEVER happend.
 	if((head->sessionId = manage.getSessionId(tSocket)) < 0){
-		cout<<"[B] Closed Socket get data."<<endl; 
+		cout<<"[B] Closed Socket get data."<<endl;
 		closeTCP(eid, tSocket, 2, manage);
 		return 0;
 	}
 
-	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.	
+	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
 		UDT::epoll_remove_ssock(eid, tSocket);
 		shutdown(tSocket, 0);
@@ -252,7 +281,18 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 	cout<<"[D] DownloadT2U send. Size:"<<size<<endl;
 #endif
-	int send = udtSend(manage.getuSocket(tSocket), buffer, size + PHS);
+	int uSocket = manage.getuSocket(tSocket);
+	int send = udtSend(uSocket, buffer, size + PHS);
+
+	if(send == UDT::ERROR){
+			cout<<"[E] Connect Lost at:"<<uSocket<<endl;
+			UDT::epoll_remove_usock(eid, uSocket);
+			UDT::close(uSocket);
+			UDT::epoll_remove_ssock(eid, tSocket);
+			shutdown(tSocket, 2);
+			manage.rremove(tSocket);
+			manage.wremove(tSocket);
+		}
 
 	if(size == 0)
 	  manage.rremove(tSocket);
@@ -296,10 +336,10 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	if(receivebyte < 0){
 #ifdef DEBUG
 		cout<<"Error Sig Happend"<<endl;
-#endif 
+#endif
 		return 0;
 	}
-	//timeout = -1;		
+	//timeout = -1;
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
 	//No tSocket get. Client get a error Data. Remove the Data.
 	int tSocket;
@@ -315,7 +355,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 		return 0;
 	}
 
-	//Receive Data.	
+	//Receive Data.
 	udtRecv(uSocket, buffer + PHS, head->length);
 
 	//Decrypt Data.

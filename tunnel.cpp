@@ -1,3 +1,11 @@
+/****************************
+	Name:         UdtWrapper
+	Author:       Catofes
+	Date:         2014-11-1
+	License:      All Right Reserved
+	Description:  A tunnel to exchange tcp stream via udt.
+*****************************/
+
 #include <iostream>
 #include <udt/udt.h>
 #include <string.h>
@@ -5,6 +13,7 @@
 #include <errno.h>
 using namespace std;
 #include "tunnel.h"
+#include "config.h"
 
 void setTimeOut(int tSocket)
 {
@@ -13,23 +22,23 @@ void setTimeOut(int tSocket)
 	setsockopt(tSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
 }
 
-int udtConnect(string remoteAddress, int portNum, bool IPV6)
+int udtConnect(Config &config)
 {
-	cout << "[I] UDT Start Connect to " << remoteAddress << ":" << portNum << endl;
+	cout << "[I] UDT Start Connect to " << config.remoteAddress << ":" << config.remotePort << endl;
 	int sock;
-	if(IPV6){
+	if(config.IPV6){
 		if((sock = UDT::socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
 			cout << "[E] Could not create UDT Socket." << endl;
 			return -1;
 		}
 		sockaddr_in6 remote;
 		memset(&remote, '\0', sizeof(remote));
-		if(inet_pton(AF_INET6, remoteAddress.c_str(), &(remote.sin6_addr)) == 0) {
+		if(inet_pton(AF_INET6, config.remoteAddress.c_str(), &(remote.sin6_addr)) == 0) {
 			cout << "[E] Wrong Ip Address." << endl;
 			return -2;
 		}
 		remote.sin6_family = AF_INET6;
-		remote.sin6_port = htons(portNum);
+		remote.sin6_port = htons(config.remotePort);
 		if(UDT::ERROR == UDT::connect(sock, (sockaddr*) &(remote), sizeof(remote))) {
 			cout << "[E] UDT connection failed." << endl;
 			cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
@@ -44,12 +53,12 @@ int udtConnect(string remoteAddress, int portNum, bool IPV6)
 		return -1;
 	}
 	sockaddr_in remote;
-	if(inet_aton(remoteAddress.c_str(), &(remote.sin_addr)) == 0) {
+	if(inet_aton(config.remoteAddress.c_str(), &(remote.sin_addr)) == 0) {
 		cout << "[E] Wrong Ip Address." << endl;
 		return -2;
 	}
 	remote.sin_family = AF_INET;
-	remote.sin_port = htons(portNum);
+	remote.sin_port = htons(config.remotePort);
 	memset(&(remote.sin_zero), '\0', 8);
 	if(UDT::ERROR == UDT::connect(sock, (sockaddr*) &(remote), sizeof(remote))) {
 		cout << "[E] UDT connection failed." << endl;
@@ -58,14 +67,14 @@ int udtConnect(string remoteAddress, int portNum, bool IPV6)
 	}
 	cout << "[I] UDT connect successfully." << endl;
 	return sock;
-	}	
+	}
 }
 
-int udtListen(int portNum, int maxPending, bool IPV6)
+int udtListen(Config &config)
 {
-	cout << "[I] UDT start to listen localport: " << portNum << endl;
+	cout << "[I] UDT start to listen localport: " << config.listenPort << endl;
 	int sock;
-	if(IPV6){
+	if(config.IPV6){
 		sockaddr_in6 local;
 		memset(&(local), '\0', sizeof(local));
 		if((sock = UDT::socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
@@ -73,14 +82,14 @@ int udtListen(int portNum, int maxPending, bool IPV6)
 			return -1;
 		}
 		local.sin6_family = AF_INET6;
-		local.sin6_port = htons(portNum);
+		local.sin6_port = htons(config.listenPort);
 		local.sin6_addr = in6addr_any;
 		if(UDT::ERROR == UDT::bind(sock, (sockaddr*) &local, sizeof(local))) {
 			cout << "[E] UDT bind failed." << endl;
 			cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
 			return -2;
 		}
-		if (UDT::ERROR == UDT::listen(sock, maxPending)) {
+		if (UDT::ERROR == UDT::listen(sock, config.maxPending)) {
 			cout << "[E] Listen error." << endl;
 			return -3;
 		}
@@ -94,7 +103,7 @@ int udtListen(int portNum, int maxPending, bool IPV6)
 		return -1;
 	}
 	local.sin_family = AF_INET;
-	local.sin_port = htons(portNum);
+	local.sin_port = htons(config.listenPort);
 	local.sin_addr.s_addr = INADDR_ANY;
 	memset(&(local.sin_zero), '\0', 8);
 	if(UDT::ERROR == UDT::bind(sock, (sockaddr*) &local, sizeof(local))) {
@@ -102,7 +111,7 @@ int udtListen(int portNum, int maxPending, bool IPV6)
 		cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
 		return -2;
 	}
-	if (UDT::ERROR == UDT::listen(sock, maxPending)) {
+	if (UDT::ERROR == UDT::listen(sock, config.maxPending)) {
 		cout << "[E] Listen error." << endl;
 		return -3;
 	}
@@ -110,7 +119,7 @@ int udtListen(int portNum, int maxPending, bool IPV6)
 	return sock;
 }
 
-int tcpConnect(string remoteAddress, int portNum)
+int tcpConnect(Config &config)
 {
 	int sock;
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -118,12 +127,12 @@ int tcpConnect(string remoteAddress, int portNum)
 		return -1;
 	}
 	sockaddr_in remote;
-	if(inet_aton(remoteAddress.c_str(), &(remote.sin_addr)) == 0) {
+	if(inet_aton(config.remoteAddress.c_str(), &(remote.sin_addr)) == 0) {
 		cout << "[E] Wrong Ip Address." << endl;
 		return -2;
 	}
 	remote.sin_family = AF_INET;
-	remote.sin_port = htons(portNum);
+	remote.sin_port = htons(config.remotePort);
 	memset(&(remote.sin_zero), '\0', 8);
 	if(UDT::ERROR == connect(sock, (sockaddr*) &(remote), sizeof(remote))) {
 		cout << "[E] connection failed." << endl;
@@ -133,7 +142,7 @@ int tcpConnect(string remoteAddress, int portNum)
 	return sock;
 }
 
-int tcpListen(int portNum, int maxPending)
+int tcpListen(Config &config)
 {
 	int sock;
 	sockaddr_in local;
@@ -143,12 +152,12 @@ int tcpListen(int portNum, int maxPending)
 	}
 	local.sin_family = AF_INET;
 	local.sin_addr.s_addr = htonl(INADDR_ANY);
-	local.sin_port = htons(portNum);
+	local.sin_port = htons(config.listenPort);
 	if (bind(sock, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		cout << "[E] Bind error." << endl;
 		return -2;
 	}
-	if (listen(sock, maxPending) < 0) {
+	if (listen(sock, config.maxPending) < 0) {
 		cout << "[E] Listen error." << endl;
 		return -3;
 	}

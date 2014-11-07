@@ -1,3 +1,11 @@
+/****************************
+	Name:         UdtWrapper
+	Author:       Catofes
+	Date:         2014-11-1
+	License:      All Right Reserved
+	Description:  A tunnel to exchange tcp stream via udt.
+*****************************/
+
 #include <iostream>
 #include <map>
 #include <stdlib.h>
@@ -10,15 +18,16 @@ using namespace std;
 #include "tunnel.h"
 #include "encrypt.h"
 #include "epoll.h"
+#include "config.h"
 
 
-int clientLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &encrypt, bool IPV6 = false)
+int clientLoop(Config &config, Encrypt &encrypt)
 {
 	signal(SIGPIPE, SIG_IGN);
 	int uSocket,tSocket;
-	if((uSocket = udtConnect(remoteAddress, remotePort, IPV6)) < 0 )
+	if((uSocket = udtConnect(config)) < 0 )
 	  exit(1);
-	if((tSocket = tcpListen(listenPort, maxPending)) < 0 )
+	if((tSocket = tcpListen(config)) < 0 )
 	  exit(1);
 	SessionManage manage;
 	char buffer[BS];
@@ -36,7 +45,7 @@ int clientLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &en
 			if(*i == tSocket){
 				tcpAcpt(eid, tSocket, manage);
 			}else{
-				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt);
+				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt, config);
 			}
 		}
 	}
@@ -45,15 +54,21 @@ int clientLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &en
 int main(int argc, char *argv[])
 {
 	Encrypt encrypt;
+	Config config;
 	if(argc < 4) {
 		printf("usage: %s listenPort remoteAddress removePort \n",argv[0]);
 		exit(1);
 	}
 	if(string(argv[1]) == "-6"){
-		string remoteAddress(argv[3]);
-		clientLoop(atoi(argv[2]), remoteAddress, atoi(argv[4]),encrypt, true);
+		config.remoteAddress = string(argv[3]);
+		config.listenPort = atoi(argv[2]);
+		config.remotePort = atoi(argv[4]);
+		config.IPV6 = true;
+		clientLoop(config, encrypt);
 	}else{
-		string remoteAddress(argv[2]);
-		clientLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
+		config.remoteAddress = string(argv[2]);
+		config.listenPort = atoi(argv[1]);
+		config.remotePort = atoi(argv[3]);
+		clientLoop(config, encrypt);
 	}
 }

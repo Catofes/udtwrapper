@@ -8,11 +8,14 @@
 
 #ifndef _UDTTUNNEL_
 #define _UDTTUNNEL_
+
+#include "config.h"
+
 void setTimeOut(int tSocket);
-int udtConnect(string remoteAddress, int portNum, bool IPV6 = false);
-int udtListen(int portNum, int maxPending, bool IPV6 = false);
-int tcpConnect(string remoteAddress, int portNum);
-int tcpListen(int portNum, int maxPending);
+int udtConnect(Config &config);
+int udtListen(Config &config);
+int tcpConnect(Config &config);
+int tcpListen(Config &config);
 
 int udtRecv(int sock, char *buffer, int size);
 int udtRecvNoBlock(int sock, char *buffer, int size);

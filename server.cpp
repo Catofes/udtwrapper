@@ -1,3 +1,11 @@
+/****************************
+	Name:         UdtWrapper
+	Author:       Catofes
+	Date:         2014-11-1
+	License:      All Right Reserved
+	Description:  A tunnel to exchange tcp stream via udt.
+*****************************/
+
 #include <iostream>
 #include <map>
 #include <stdlib.h>
@@ -10,12 +18,13 @@ using namespace std;
 #include "tunnel.h"
 #include "encrypt.h"
 #include "epoll.h"
+#include "config.h"
 
-int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &encrypt, bool IPV6 = false)
+int serverLoop(Config &config, Encrypt &encrypt)
 {
 	signal(SIGPIPE, SIG_IGN);
 	int uSocket;
-	if((uSocket = udtListen(listenPort, maxPending, IPV6)) < 0 )
+	if((uSocket = udtListen(config)) < 0 )
 	  exit(1);
 	SessionManage manage;
 	char buffer[BS];
@@ -27,9 +36,9 @@ int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &en
 		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
 		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
 			if(*i == uSocket){
-				udtAcpt(eid, uSocket,IPV6);
+				udtAcpt(eid, uSocket, config);
 			}else{
-				uploadU2T(eid, *i, buffer, manage, remoteAddress, remotePort, encrypt);
+				uploadU2T(eid, *i, buffer, manage, encrypt, config);
 			}
 		}
 		for(set<int>::iterator i = sreadfds.begin(); i != sreadfds.end(); ++i){
@@ -41,15 +50,21 @@ int serverLoop(int listenPort, string remoteAddress, int remotePort, Encrypt &en
 int main(int argc, char *argv[])
 {
 	Encrypt encrypt;
+	Config config;
 	if(argc < 4) {
 		printf("usage: %s listenPort remoteAddress removePort \n",argv[0]);
 		exit(1);
 	}
 	if(string(argv[1])=="-6"){
-		string remoteAddress(argv[3]);
-		serverLoop(atoi(argv[2]), remoteAddress, atoi(argv[4]),encrypt, true);
+		config.remoteAddress = string(argv[3]);
+		config.listenPort = atoi(argv[2]);
+		config.remotePort = atoi(argv[4]);
+		config.IPV6 = true;
+		serverLoop(config, encrypt);
 	}else{
-		string remoteAddress(argv[2]);
-		serverLoop(atoi(argv[1]), remoteAddress, atoi(argv[3]),encrypt);
+		config.remoteAddress = string(argv[2]);
+		config.listenPort = atoi(argv[1]);
+		config.remotePort = atoi(argv[3]);
+		serverLoop(config, encrypt);
 	}
 }

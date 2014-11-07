@@ -1,3 +1,11 @@
+/****************************
+  Name:         UdtWrapper
+  Author:       Catofes
+  Date:         2014-11-1
+  License:      All Right Reserved
+  Description:  A tunnel to exchange tcp stream via udt.
+*****************************/
+
 #include <iostream>
 using namespace std;
 
