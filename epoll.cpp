@@ -203,7 +203,8 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 
 	//Read PackageHead.
 
-	int receivebytes = udtRecvNoBlock(uSocket, buffer, PHS);
+	int receivebytes = udtRecvNoBlock(eid, uSocket, buffer, PHS);
+	//int receivebytes = udtRecv(uSocket, buffer, PHS);
 	//check error
 	if(receivebytes == -2)
 	{
@@ -331,7 +332,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	//Set UDT_RECVTIMEO
 	//int timeout = 1;
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
-	int receivebyte = udtRecvNoBlock(uSocket, buffer, PHS);
+	int receivebyte = udtRecvNoBlock(eid, uSocket, buffer, PHS);
 
 	if(receivebyte < 0){
 #ifdef DEBUG

@@ -178,7 +178,7 @@ int udtRecv(int sock, char *buffer, int size)
 
 }
 
-int udtRecvNoBlock(int sock, char *buffer, int size)
+int udtRecvNoBlock(int eid, int sock, char *buffer, int size)
 {
 	bool blocking = false;
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
@@ -188,10 +188,12 @@ int udtRecvNoBlock(int sock, char *buffer, int size)
 	blocking = true;
 	UDT::setsockopt(sock, 0, UDT_RCVSYN, &blocking, sizeof(bool));
 	if(ret <= 0){
-		if(UDT::getlasterror_code() != 6002)
-		  return -1;
+		if(UDT::getlasterror_code() != 6002){
+			UDT::epoll_remove_usock(eid,sock);
+			UDT::epoll_add_usock(eid,sock);
+			return -1;
+		}
 		else{
-			//cout<<"Sig Error."<<endl;
 			return -2;
 		}
 	}

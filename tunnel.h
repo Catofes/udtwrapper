@@ -18,7 +18,7 @@ int tcpConnect(Config &config);
 int tcpListen(Config &config);
 
 int udtRecv(int sock, char *buffer, int size);
-int udtRecvNoBlock(int sock, char *buffer, int size);
+int udtRecvNoBlock(int eid, int sock, char *buffer, int size);
 int udtSend(int sock, const char *buffer, int size);
 int tcpRecv(int sock, char *buffer, int size);
 int tcpSend(int sock, const char *buffer, int size);
