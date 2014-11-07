@@ -112,7 +112,7 @@ int closeUDT(int eid, int uSocket, SessionManage &mange)
 	cout<<"[D] Close UDT:"<<uSocket<<endl;
 #endif
 	UDT::epoll_remove_usock(eid, uSocket);
-	UDT::close(uSocket);
+	//UDT::close(uSocket);
 	return 0;
 }
 
