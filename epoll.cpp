@@ -89,16 +89,17 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 int closeTCP(int eid, int tSocket, int num, SessionManage &manage)
 {
 	if(manage.getSessionId(tSocket) > 0){
-		if(num = 0)
+		if(num == 0)
 		  manage.rremove(tSocket);
-		else if(num = 1)
+		else if(num == 1)
 		  manage.wremove(tSocket);
 		else{
 			manage.rremove(tSocket);
 			manage.wremove(tSocket);
 		}
 	}
-	UDT::epoll_remove_ssock(eid, tSocket);
+	if(num != 1)
+	  UDT::epoll_remove_ssock(eid, tSocket);
 #ifdef DEBUG
 	cout<<"[D] Close TCP:"<<tSocket<<endl;
 #endif
@@ -136,8 +137,9 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 
 	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
-		UDT::epoll_remove_ssock(eid, tSocket);
-		shutdown(tSocket,0);
+		//UDT::epoll_remove_ssock(eid, tSocket);
+		//shutdown(tSocket,0);
+		closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -151,8 +153,8 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 #endif
 	int send = udtSend(uSocket, buffer, size + PHS);
 
-	if(size == 0)
-	  manage.rremove(tSocket);
+	//if(size == 0)
+	  //manage.rremove(tSocket);
 
 	if(send == UDT::ERROR)
 	{
@@ -172,6 +174,7 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 		uSocket = newuSocket;
 		UDT::epoll_add_usock(eid, uSocket);
 	}
+
 	return send;
 }
 
@@ -235,8 +238,9 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 
 	//If length = 0 . Means Stop Write on a TCP.
 	if(head->length == 0||head->length > BS-PHS){
-		shutdown(tSocket,1);
-		manage.wremove(tSocket);
+		//shutdown(tSocket,1);
+		//manage.wremove(tSocket);
+		closeTCP(eid, tSocket, 1, manage);
 		return 0;
 	}
 
@@ -271,8 +275,9 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 
 	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
-		UDT::epoll_remove_ssock(eid, tSocket);
-		shutdown(tSocket, 0);
+		//UDT::epoll_remove_ssock(eid, tSocket);
+		//shutdown(tSocket, 0);
+		closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -291,14 +296,11 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 			cout<<"[E] Connect Lost at:"<<uSocket<<endl;
 			UDT::epoll_remove_usock(eid, uSocket);
 			UDT::close(uSocket);
-			UDT::epoll_remove_ssock(eid, tSocket);
-			shutdown(tSocket, 2);
-			manage.rremove(tSocket);
-			manage.wremove(tSocket);
+			closeTCP(eid, tSocket, 2, manage);
 		}
 
-	if(size == 0)
-	  manage.rremove(tSocket);
+	//if(size == 0)
+	//  manage.rremove(tSocket);
 
 	return send;
 }
@@ -353,8 +355,9 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 
 	//If length = 0 . Stop Write.
 	if(head->length == 0||head->length > BS-PHS){
-		shutdown(tSocket,1);
-		manage.wremove(tSocket);
+		//shutdown(tSocket,1);
+		//manage.wremove(tSocket);
+		closeTCP(eid, tSocket, 1, manage);
 		return 0;
 	}
 
