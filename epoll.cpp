@@ -139,7 +139,7 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 	if(size <= 0){
 		//UDT::epoll_remove_ssock(eid, tSocket);
 		//shutdown(tSocket,0);
-		closeTCP(eid, tSocket, 0, manage);
+		//closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -153,7 +153,8 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 #endif
 	int send = udtSend(uSocket, buffer, size + PHS);
 
-	//if(size == 0)
+	if(size == 0)
+	  closeTCP(eid, tSocket, 0, manage);
 	  //manage.rremove(tSocket);
 
 	if(send == UDT::ERROR)
@@ -277,7 +278,7 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 	if(size <= 0){
 		//UDT::epoll_remove_ssock(eid, tSocket);
 		//shutdown(tSocket, 0);
-		closeTCP(eid, tSocket, 0, manage);
+		//closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -299,8 +300,9 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 			closeTCP(eid, tSocket, 2, manage);
 		}
 
-	//if(size == 0)
-	//  manage.rremove(tSocket);
+	if(size == 0)
+	  closeTCP(eid, tSocket, 0, manage);
+	  //manage.rremove(tSocket);
 
 	return send;
 }
