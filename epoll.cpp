@@ -103,6 +103,8 @@ int closeTCP(int eid, int tSocket, int num, SessionManage &manage)
 	cout<<"[D] Close TCP:"<<tSocket<<endl;
 #endif
 	shutdown(tSocket, num);
+	if(manage.getSessionId(tSocket) <= 0)
+	  close(tSocket);
 	return 0;
 }
 
