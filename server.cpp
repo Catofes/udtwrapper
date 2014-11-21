@@ -36,7 +36,7 @@ int serverLoop(Config &config, Encrypt &encrypt)
 	set<int> sreadfds;
 	timeval lastwake;
 	timeval nowwake;
-	int t;
+	int t = 0 ;
 	while(true){
 		gettimeofday(&lastwake,0);
 		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);

@@ -38,10 +38,10 @@ int GabageClean(int t, int eid, SessionManage &manage, Config &config)
 {
 	if(random1() > (t/config.maxT)*(t/config.maxT) || random1() > (manage.getsize()/config.maxS)*(manage.getsize()/config.maxS))
 	  return 0;
-	int gcNum = rand()%(int)(manage.getsize()*config.p*(t/config.maxT)*(t/config.maxT)*(t/config.maxT)) + 1;
+	int gcNum = rand()%((int)(manage.getsize()*config.p*(t/config.maxT)*(t/config.maxT)*(t/config.maxT))) + 1;
 	int socket=0;
 #ifdef DEBUG
-	cout<<"[D] Start Garbage Collection. Try to collect: "<<gcNum<<" sockets" <<endl;
+	cout<<"[D] Start Garbage Collection. t: " << t << ". Try to collect: "<<gcNum<<" sockets" <<endl;
 #endif
 	while((socket = manage.cleanone(config)) > 0 && gcNum > 0){
 		closeTCP(eid, socket, 2, manage);
