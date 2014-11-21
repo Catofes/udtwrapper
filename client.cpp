@@ -53,6 +53,7 @@ int clientLoop(Config &config, Encrypt &encrypt)
 				tcpAcpt(eid, tSocket, manage);
 			}else{
 				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt, config);
+				manage.wakeup(*i);
 			}
 		}
 		t = (int)(t * 0.2 + 0.8 * ((nowwake.tv_sec - lastwake.tv_sec) * 1000000 + nowwake.tv_usec - lastwake.tv_usec));

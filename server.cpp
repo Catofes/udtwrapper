@@ -50,6 +50,7 @@ int serverLoop(Config &config, Encrypt &encrypt)
 		}
 		for(set<int>::iterator i = sreadfds.begin(); i != sreadfds.end(); ++i){
 			downloadT2U(eid, *i, buffer, manage, encrypt);
+			manage.wakeup(*i);
 		}
 		t = (int)(t * 0.2 + 0.8 * ((nowwake.tv_sec - lastwake.tv_sec) * 1000000 + nowwake.tv_usec - lastwake.tv_usec));
 		GabageClean(t, eid, manage, config);    
