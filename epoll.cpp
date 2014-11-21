@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdlib.h>
 using namespace std;
 
 #include "package.h"
@@ -26,6 +27,24 @@ using namespace std;
 
 
 void signal_callback_handler(int signum){
+}
+
+float random1()
+{
+	return (rand()%100000)/100000.0;
+}
+
+int GabageClean(int t, int eid, SessionManage &manage, Config &config)
+{
+	if(random1() > (t/config.maxT)*(t/config.maxT) || random1() > (manage.getsize()/config.maxS)*(manage.getsize()/config.maxS))
+	  return 0;
+	int gcNum = rand()%(int)(manage.getsize()*config.p*(t/config.maxT)*(t/config.maxT)*(t/config.maxT)) + 1;
+	int socket=0;
+	while((socket = manage.cleanone(config)) > 0 && gcNum > 0){
+		closeTCP(eid, socket, 2, manage);
+		gcNum--;
+	}
+	return 0;
 }
 
 int udtAcpt(int eid, int uSocket, Config &config)

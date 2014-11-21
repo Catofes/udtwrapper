@@ -1,16 +1,18 @@
 /****************************
-	Name:         UdtWrapper
-	Author:       Catofes
-	Date:         2014-11-1
-	License:      All Right Reserved
-	Description:  A tunnel to exchange tcp stream via udt.
-*****************************/
+Name:         UdtWrapper
+Author:       Catofes
+Date:         2014-11-1
+License:      All Right Reserved
+Description:  A tunnel to exchange tcp stream via udt.
+ *****************************/
 
 #include <iostream>
 #include <map>
 #include <stdlib.h>
 #include <udt/udt.h>
 #include <signal.h>
+#include <time.h>
+#include <sys/time.h>
 using namespace std;
 
 #include "package.h"
@@ -36,8 +38,13 @@ int clientLoop(Config &config, Encrypt &encrypt)
 	UDT::epoll_add_usock(eid, uSocket);
 	set<UDTSOCKET> readfds;
 	set<int> sreadfds;
+	int t = 0;
+	timeval lastwake;
+	timeval nowwake;
 	while(true){
+		gettimeofday(&lastwake, 0);
 		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
+		gettimeofday(&nowwake,0);
 		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
 			downloadU2T(eid, *i, buffer, manage, encrypt);
 		}
@@ -48,6 +55,8 @@ int clientLoop(Config &config, Encrypt &encrypt)
 				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt, config);
 			}
 		}
+		t = (int)(t * 0.2 + 0.8 * ((nowwake.tv_sec - lastwake.tv_sec) * 1000000 + nowwake.tv_usec - lastwake.tv_usec));
+		GabageClean(t, eid, manage, config);
 	}
 }
 
