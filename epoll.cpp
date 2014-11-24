@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <netinet/tcp.h>
 using namespace std;
 
 #include "package.h"
@@ -103,6 +104,26 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
 	cout << "[D] Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << endl;
+	//Set send timeout
+	unsigned int timeout = 10;
+	if (-1 == setsockopt(connfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout, sizeof(timeout))) {
+		return -1;
+	}
+	int keep_alive = 1;
+	int keep_idle = 5, keep_interval = 1, keep_count = 3;
+	int ret = 0;
+	if (-1 == (ret = setsockopt(connfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)))) {
+		return -1;
+	}
+	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_idle,	sizeof(keep_idle)))) {
+		return -1;
+	}
+	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_interval,	sizeof(keep_interval)))) {
+		return -1;
+	}
+	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPCNT, &keep_count,	sizeof(keep_count)))) {
+		return -1;
+	}
 	manage.generate(0, connfd);
 	UDT::epoll_add_ssock(eid, connfd);
 	return connfd;
@@ -177,7 +198,7 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 
 	if(size == 0)
 	  closeTCP(eid, tSocket, 0, manage);
-	  //manage.rremove(tSocket);
+	//manage.rremove(tSocket);
 
 	if(send == UDT::ERROR)
 	{
@@ -316,15 +337,15 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 	int send = udtSend(uSocket, buffer, size + PHS);
 
 	if(send == UDT::ERROR){
-			cout<<"[E] Connect Lost at:"<<uSocket<<endl;
-			UDT::epoll_remove_usock(eid, uSocket);
-			UDT::close(uSocket);
-			closeTCP(eid, tSocket, 2, manage);
-		}
+		cout<<"[E] Connect Lost at:"<<uSocket<<endl;
+		UDT::epoll_remove_usock(eid, uSocket);
+		UDT::close(uSocket);
+		closeTCP(eid, tSocket, 2, manage);
+	}
 
 	if(size == 0)
 	  closeTCP(eid, tSocket, 0, manage);
-	  //manage.rremove(tSocket);
+	//manage.rremove(tSocket);
 
 	return send;
 }
