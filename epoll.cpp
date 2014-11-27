@@ -278,7 +278,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 		
 		ClientInfo *info = &(manage.tsocket_clientinfo[tSocket]);
 		if(random1() <= sqrt(slowbuffer/(config.maxSlowBuffer+0.1)) ){
-			if(info->onsleep = false){
+			if(info->onsleep == false){
 #ifdef DEBUG
 				cout<<"[D] socket sleep."<<endl;
 #endif
@@ -286,7 +286,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 				UDT::epoll_remove_ssock(eid,tSocket);
 			}
 		}else{
-		  if(info->onsleep = true){
+		  if(info->onsleep == true){
 			  info->onsleep = false;
 #ifdef DEBUG
 			  cout<<"[D] socket wakeup."<<endl;
