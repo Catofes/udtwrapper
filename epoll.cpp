@@ -442,7 +442,8 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<size<<" Sendsize: "<<sendsize<<" Totalsize: "<<info->size<<endl;
 #endif
-	int event = UDT_EPOLL_OUT;
+	UDT::epoll_remove_ssock(eid, tSocket);
+	int event = UDT_EPOLL_IN | UDT_EPOLL_OUT;
 	UDT::epoll_add_ssock(eid, tSocket, &event);
 	//return tcpSend(tSocket, buffer + PHS, size);
 }
