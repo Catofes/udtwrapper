@@ -22,5 +22,7 @@ int udtRecvNoBlock(int eid, int sock, char *buffer, int size);
 int udtSend(int sock, const char *buffer, int size);
 int tcpRecv(int sock, char *buffer, int size);
 int tcpSend(int sock, const char *buffer, int size);
+bool SetSocketBlockingEnabled(int fd, bool blocking);
+int tcpSendNoBlock(int sock, const char *buffer, int size);
 
 #endif

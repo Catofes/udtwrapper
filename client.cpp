@@ -34,16 +34,18 @@ int clientLoop(Config &config, Encrypt &encrypt)
 	SessionManage manage;
 	char buffer[BS];
 	int eid = UDT::epoll_create();
-	UDT::epoll_add_ssock(eid, tSocket);
+	int event = UDT_EPOLL_IN;
+	UDT::epoll_add_ssock(eid, tSocket, &event);
 	UDT::epoll_add_usock(eid, uSocket);
 	set<UDTSOCKET> readfds;
 	set<int> sreadfds;
+	set<int> swritefds;
 	int t = 0;
 	timeval lastwake;
 	timeval nowwake;
 	while(true){
 		gettimeofday(&lastwake, 0);
-		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, NULL);
+		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, &swritefds);
 		gettimeofday(&nowwake,0);
 		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
 			downloadU2T(eid, *i, buffer, manage, encrypt);
@@ -55,6 +57,9 @@ int clientLoop(Config &config, Encrypt &encrypt)
 				uploadT2U(eid, *i, uSocket, buffer, manage, encrypt, config);
 				manage.wakeup(*i);
 			}
+		}
+		for(set<int>::iterator i = swritefds.begin(); i != swritefds.end(); ++i){
+			downloadB2T(eid, *i, uSocket, manage);
 		}
 		t = (int)(t * 0.2 + 0.8 * ((nowwake.tv_sec - lastwake.tv_sec) * 1000000 + nowwake.tv_usec - lastwake.tv_usec));
 		GabageClean(t, eid, manage, config);

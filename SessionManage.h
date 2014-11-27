@@ -10,7 +10,15 @@
 #define _SESSIONMANAGE_
 
 #include <map>
+#include <vector>
 #include "config.h"
+
+struct BufferInfo
+{
+	int size;
+	int offset;
+	char * buffer;
+};
 
 struct ClientInfo
 {
@@ -19,6 +27,10 @@ struct ClientInfo
   int lastAck;
   bool onread;
   bool onwrite;
+  bool sendblock;
+  bool size;
+  bool onsleep;
+  vector<BufferInfo> buffers;
 };
 
 bool operator < (const ClientInfo &l, const ClientInfo &r);
@@ -27,11 +39,11 @@ class SessionManage
 {
 private:
   map<ClientInfo, int> clientinfo_tsocket;
-  map<int, ClientInfo> tsocket_clientinfo;
   int randomSessionId();
   int remove(int tSocket);
   int gettime();
 public:
+  map<int, ClientInfo> tsocket_clientinfo;
   SessionManage();
   int add(int uSocket, int sessionId, int tSocket);
   int wakeup(int tSocket);

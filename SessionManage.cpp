@@ -49,6 +49,9 @@ int SessionManage::add(int uSocket, int sessionId, int tSocket)
   data.onread = true;
   data.onwrite = true;
   data.lastAck = gettime();
+  data.sendblock = false;
+  data.size = 0;
+  data.onsleep = false;
   clientinfo_tsocket[data]=tSocket;
   tsocket_clientinfo[tSocket]=data;
   return 0;
@@ -62,6 +65,9 @@ int SessionManage::generate(int uSocket, int tSocket)
   data.onread = true;
   data.onwrite = true;
   data.lastAck = gettime();
+  data.sendblock = false;
+  data.size = 0;
+  data.onsleep = false;
   while(clientinfo_tsocket.find(data) != clientinfo_tsocket.end())
     data.sessionId = randomSessionId();
   clientinfo_tsocket[data]=tSocket;

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 using namespace std;
 #include "tunnel.h"
 #include "config.h"
@@ -242,3 +243,21 @@ int tcpSend(int sock, const char *buffer, int size)
 	}
 	return index;
 }
+
+bool SetSocketBlockingEnabled(int fd, bool blocking)
+{
+	if (fd < 0) return false;
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags < 0) return false;
+	flags = blocking ? (flags&~O_NONBLOCK) : (flags|O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, flags) == 0) ? true : false;
+}
+
+int tcpSendNoBlock(int sock, const char *buffer, int size)
+{
+	int ret = send(sock, buffer, size, 0);
+	if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) )
+	  return -2;
+	return ret;
+}
+

@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <netinet/tcp.h>
+#include <string.h>
+#include <cmath>
 using namespace std;
 
 #include "package.h"
@@ -125,7 +127,9 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 		return -1;
 	}
 	manage.generate(0, connfd);
-	UDT::epoll_add_ssock(eid, connfd);
+	SetSocketBlockingEnabled(connfd, false);
+	int event = UDT_EPOLL_IN;
+	UDT::epoll_add_ssock(eid, connfd, &event );
 	return connfd;
 }
 
@@ -178,11 +182,11 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 		return 0;
 	}
 
+	if(size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	  return 0;
+
 	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
-		//UDT::epoll_remove_ssock(eid, tSocket);
-		//shutdown(tSocket,0);
-		//closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -228,28 +232,6 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 #ifdef DEBUG
 	cout<<"[D] UploadU2T recv SIG UP."<<endl;
 #endif
-	//Check If this Sig is fake wakeup. If epoll works good, This should not use
-	/*
-	   UDTSET readfds;
-	   timeval tv;
-	   tv.tv_sec = 0;
-	   tv.tv_usec = 1;
-	   UD_SET(uSocket, &readfds);
-	   int res = UDT::select(0, &readfds, NULL, NULL, &tv);
-	   if (!((res != UDT::ERROR) && (UD_ISSET(u, &readfds))))
-	   return ;//No Data Input.
-	   */
-
-	//Check If UDT have and error.
-	/*
-	   if(UDT::getlasterror_code() != 0){
-	   cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
-	   UDT::getlasterror().clear();
-	   closeUDT(eid, uSocket, manage);
-	   return 0;
-	   }
-	   */
-
 	//Read PackageHead.
 
 	int receivebytes = udtRecvNoBlock(eid, uSocket, buffer, PHS);
@@ -266,7 +248,6 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 		closeUDT(eid, uSocket, manage);
 		return 0;
 	}
-	//if no data receive and no error happend
 
 	int tSocket;
 	//If sessionId is new, Setup new tcp connection.
@@ -278,6 +259,36 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 #ifdef DEBUG
 		cout<<"[D] SessionManage Size:"<<manage.getsize()<<endl;
 #endif
+	}
+
+	//Reset
+	if(head->length == -1){
+#ifdef DEBUG
+		cout<<"[D] Reset SIG received." <<endl;
+#endif
+		closeTCP(eid, tSocket, 2,manage);
+		return 0;
+	}
+
+	if(head->length <= -10000){
+#ifdef DEBUG
+		cout<<"[D] Slow Down SIG received." <<endl;
+#endif
+		int slowbuffer = -10000-head->length;
+		
+		ClientInfo *info = &(manage.tsocket_clientinfo[tSocket]);
+		if(random1() <= sqrt(slowbuffer/(config.maxSlowBuffer+0.1)) ){
+			if(info->onsleep = false){
+				info->onsleep = true;
+				UDT::epoll_remove_ssock(eid,tSocket);
+			}
+		}else{
+		  if(info->onsleep = true){
+			  info->onsleep = false;
+			  UDT::epoll_add_ssock(eid, tSocket);
+		  }
+		}
+		return 0;
 	}
 
 	//If length = 0 . Means Stop Write on a TCP.
@@ -319,9 +330,6 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 
 	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
-		//UDT::epoll_remove_ssock(eid, tSocket);
-		//shutdown(tSocket, 0);
-		//closeTCP(eid, tSocket, 0, manage);
 		size = 0;
 	}
 	head->length = size;
@@ -356,27 +364,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 	cout<<"[D] DownloadU2T recv SIG UP." <<endl;
 #endif
-	//Check If this Sig is fake wakeup. If epoll works good, This should not use
-	/*
-	   UDTSET readfds;
-	   timeval tv;
-	   tv.tv_sec = 0;
-	   tv.tv_usec = 1;
-	   UD_SET(uSocket, &readfds);
-	   int res = UDT::select(0, &readfds, NULL, NULL, &tv);
-	   if (!((res != UDT::ERROR) && (UD_ISSET(u, &readfds))))
-	   return ;//No Data Input.
-	   */
-
-	//Check If UDT have and error.
-	/*
-	   if(UDT::getlasterror_code() != 0){
-	   cout<<"[E] UDT ERROR. At code:"<<UDT::getlasterror_code()<<endl;
-	   UDT::getlasterror().clear();
-	   return 0;
-	   }
-	   */
-
 	//Read PackageHead.
 	//Set UDT_RECVTIMEO
 	//int timeout = 1;
@@ -391,10 +378,12 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	}
 	//timeout = -1;
 	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
-	//No tSocket get. Client get a error Data. Remove the Data.
+	//No tSocket get. Client get a error Data. Remove the Data. Send RESET SIG.
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
 		udtRecv(uSocket, buffer + PHS, head->length);
+		head->length = -1;
+		udtSend(uSocket, buffer, PHS);
 		return 0;
 	}
 
@@ -416,6 +405,80 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	cout<<"[D] DownloadU2T send. Size:"<<size<<endl;
 #endif
 
-	//Send Data
-	return tcpSend(tSocket, buffer + PHS, size);
+	//save data to socket's buffer, send info to server .
+	ClientInfo *info = &(manage.tsocket_clientinfo.find(tSocket)->second);
+
+	int sendsize = 0;
+	if(info->sendblock == false){
+		//Send Data
+		sendsize = tcpSendNoBlock(tSocket, buffer+PHS, size);
+		if(sendsize == -1){
+			cout<<"[E] Tcp error. Close TCP. Error at: "<<errno<<endl;
+			closeTCP(eid, tSocket, 2, manage);
+			return -1;
+		}
+		if (sendsize == size){
+			return sendsize;
+		}
+	}
+	if(sendsize < 0)
+	  sendsize = 0;
+
+	BufferInfo newbuffer;
+	newbuffer.size = size - sendsize;
+	newbuffer.buffer = new char[size - sendsize];
+	newbuffer.offset = 0;
+	memcpy(newbuffer.buffer, buffer + PHS + sendsize, size - sendsize);
+	info->buffers.push_back(newbuffer);
+	info->size += (size - sendsize);
+	head->length = -10000 - info->size;
+	udtSend(uSocket,buffer, PHS);
+	info->sendblock = true;
+#ifdef DEBUG
+	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<info->size<<endl;
+#endif
+	int event = UDT_EPOLL_OUT;
+	UDT::epoll_add_ssock(eid, tSocket, &event);
+	//return tcpSend(tSocket, buffer + PHS, size);
+}
+
+int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
+{
+#ifdef DEBUG
+	cout<<"downloadB2T SIG UP."<<endl;
+#endif
+	int sendsize = 0;
+	if(manage.tsocket_clientinfo.find(tSocket) == manage.tsocket_clientinfo.end())
+	{
+		UDT::epoll_remove_ssock(eid,tSocket);
+		int event = UDT_EPOLL_IN;
+		UDT::epoll_add_ssock(eid,tSocket, &event);
+	}
+	ClientInfo *info = &(manage.tsocket_clientinfo.find(tSocket)->second);
+
+	if(info->buffers.size()== 0 || info->sendblock == false){
+		info->sendblock = false;
+		UDT::epoll_remove_ssock(eid,tSocket);
+		int event = UDT_EPOLL_IN;
+		UDT::epoll_add_ssock(eid,tSocket, &event);
+		return 0;
+	}
+	BufferInfo * buffer = &(info->buffers[0]);
+	sendsize = tcpSendNoBlock(tSocket, buffer->buffer + buffer->offset, buffer->size - buffer->offset);
+	if(sendsize == buffer->size - buffer->offset){
+		delete buffer->buffer;
+		info->buffers.erase(info->buffers.begin());
+		info->size -= sendsize;
+		return 0;
+	}
+
+	if(sendsize < 0)
+	  sendsize = 0;
+	buffer->offset += sendsize;
+	info->size -= sendsize;
+	PackageHead head;
+	head.length = -10000 - info->size;
+	head.sessionId = info->sessionId;
+	udtSend(uSocket,(char *) &head, PHS); 
+	return 0;
 }

@@ -39,6 +39,7 @@ class Config
 		float maxS; //if sockets equal maxS, gc will start without consider sockets num;
 		float p; //average garbage socket in sockets
 
+		int maxSlowBuffer;
 
 		Config(){
 			maxPending = 1024;
@@ -48,6 +49,7 @@ class Config
 			maxT = 100000;
 			maxS = 900;
 			p = 0.2;
+			maxSlowBuffer=2000000;
 		};
 };
 

@@ -21,5 +21,5 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encrypt &encrypt);
 int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt &encrypt);
 int GabageClean(int t, int eid, SessionManage &manage, Config &config);
-
+int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage);
 #endif
