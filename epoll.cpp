@@ -182,8 +182,14 @@ int uploadT2U(int eid, int tSocket, int &uSocket, char* buffer, SessionManage &m
 		return 0;
 	}
 
-	if(size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	if(size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR))
 	  return 0;
+	
+	if(size == -1){
+#ifdef DEBUG
+	  cout<<"[D] Get Data error at Code: "<<errno<<endl;
+#endif
+}
 
 	//if TCP recv <= 0 . Mean TCP Close. Send disconnect package. And remove listen.
 	if(size <= 0){
@@ -479,10 +485,10 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 		return 0;
 	}
 
-	if(sendsize == -1 && (!(errno == EAGAIN || errno == EWOULDBLOCK)))
+	if(sendsize == -1 && (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)))
 	{
 #ifdef DEBUG
-		cout<<"DownloadB2T TCP Broken."<<endl;
+		cout<<"DownloadB2T TCP Broken. At:"<<errno<<endl;
 #endif
 		PackageHead head;
 		head.length = -1;
