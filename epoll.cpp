@@ -272,19 +272,25 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 
 	if(head->length <= -10000){
 #ifdef DEBUG
-		cout<<"[D] Slow Down SIG received." <<endl;
+		cout<<"[D] Slow Down SIG received. Buffersize: "<<head->length<<" Socket:"<<tSocket<<endl;
 #endif
 		int slowbuffer = -10000-head->length;
 		
 		ClientInfo *info = &(manage.tsocket_clientinfo[tSocket]);
 		if(random1() <= sqrt(slowbuffer/(config.maxSlowBuffer+0.1)) ){
 			if(info->onsleep = false){
+#ifdef DEBUG
+				cout<<"[D] socket sleep."<<endl;
+#endif
 				info->onsleep = true;
 				UDT::epoll_remove_ssock(eid,tSocket);
 			}
 		}else{
 		  if(info->onsleep = true){
 			  info->onsleep = false;
+#ifdef DEBUG
+			  cout<<"[D] socket wakeup."<<endl;
+#endif
 			  UDT::epoll_add_ssock(eid, tSocket);
 		  }
 		}
@@ -401,10 +407,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	//Decrypt Data.
 	int size = head->length;
 	encrypt.decrypt(buffer + PHS, size);
-#ifdef DEBUG
-	cout<<"[D] DownloadU2T send. Size:"<<size<<endl;
-#endif
-
 	//save data to socket's buffer, send info to server .
 	ClientInfo *info = &(manage.tsocket_clientinfo.find(tSocket)->second);
 
@@ -418,6 +420,9 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 			return -1;
 		}
 		if (sendsize == size){
+#ifdef DEBUG
+			cout<<"[D] DownloadU2T send. Size:"<<size<<endl;
+#endif
 			return sendsize;
 		}
 	}
