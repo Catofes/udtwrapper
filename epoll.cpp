@@ -435,7 +435,7 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	udtSend(uSocket,buffer, PHS);
 	info->sendblock = true;
 #ifdef DEBUG
-	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<info->size<<endl;
+	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<size<<" Sendsize: "<<sendsize<<" Totalsize: "<<info->size<<endl;
 #endif
 	int event = UDT_EPOLL_OUT;
 	UDT::epoll_add_ssock(eid, tSocket, &event);
@@ -444,9 +444,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 
 int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 {
-#ifdef DEBUG
-	cout<<"downloadB2T SIG UP."<<endl;
-#endif
 	int sendsize = 0;
 	if(manage.tsocket_clientinfo.find(tSocket) == manage.tsocket_clientinfo.end())
 	{
@@ -465,6 +462,10 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 	}
 	BufferInfo * buffer = &(info->buffers[0]);
 	sendsize = tcpSendNoBlock(tSocket, buffer->buffer + buffer->offset, buffer->size - buffer->offset);
+#ifdef DEBUG
+	cout<<"downloadB2T SIG UP. Send: "<<sendsize<<endl;
+#endif
+
 	if(sendsize == buffer->size - buffer->offset){
 		delete buffer->buffer;
 		info->buffers.erase(info->buffers.begin());
