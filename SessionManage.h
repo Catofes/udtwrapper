@@ -28,7 +28,7 @@ struct ClientInfo
   bool onread;
   bool onwrite;
   bool sendblock;
-  bool size;
+  int size;
   bool onsleep;
   vector<BufferInfo> buffers;
 };
