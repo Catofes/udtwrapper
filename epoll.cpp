@@ -468,7 +468,7 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 	BufferInfo * buffer = &(info->buffers[0]);
 	sendsize = tcpSendNoBlock(tSocket, buffer->buffer + buffer->offset, buffer->size - buffer->offset);
 #ifdef DEBUG
-	cout<<"downloadB2T SIG UP. Send: "<<sendsize<<endl;
+	cout<<"DownloadB2T SIG UP. Send: "<<sendsize<<endl;
 #endif
 
 	if(sendsize == buffer->size - buffer->offset){
@@ -478,8 +478,19 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 		return 0;
 	}
 
-	if(sendsize < 0)
-	  sendsize = 0;
+	if(sendsize == -1 && (!(errno == EAGAIN || errno == EWOULDBLOCK)))
+	{
+#ifdef DEBUG
+		cout<<"DownloadB2T TCP Broken."<<endl;
+#endif
+		PackageHead head;
+		head.length = -1;
+		head.sessionId = info->sessionId;
+		udtSend(uSocket,(char *) &head, PHS);
+		closeTCP(eid, tSocket, 2, manage);
+		return -1;
+	}
+	sendsize = 0;
 	buffer->offset += sendsize;
 	info->size -= sendsize;
 	PackageHead head;
