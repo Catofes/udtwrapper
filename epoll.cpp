@@ -106,26 +106,6 @@ int tcpAcpt(int eid, int tSocket, SessionManage &manage)
 	}
 	char *str = inet_ntoa(clientaddr.sin_addr);
 	cout << "[D] Accept a connection from " << str << ":" << ntohs(clientaddr.sin_port) << endl;
-	//Set send timeout
-	unsigned int timeout = 10;
-	if (-1 == setsockopt(connfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout, sizeof(timeout))) {
-		return -1;
-	}
-	int keep_alive = 1;
-	int keep_idle = 5, keep_interval = 1, keep_count = 3;
-	int ret = 0;
-	if (-1 == (ret = setsockopt(connfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)))) {
-		return -1;
-	}
-	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_idle,	sizeof(keep_idle)))) {
-		return -1;
-	}
-	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_interval,	sizeof(keep_interval)))) {
-		return -1;
-	}
-	if (-1 == (ret = setsockopt(connfd, IPPROTO_TCP, TCP_KEEPCNT, &keep_count,	sizeof(keep_count)))) {
-		return -1;
-	}
 	manage.generate(0, connfd);
 	SetSocketBlockingEnabled(connfd, false);
 	int event = UDT_EPOLL_IN;
@@ -365,7 +345,6 @@ int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encry
 
 	if(size == 0)
 	  closeTCP(eid, tSocket, 0, manage);
-	//manage.rremove(tSocket);
 
 	return send;
 }
@@ -376,10 +355,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #ifdef DEBUG
 	cout<<"[D] DownloadU2T recv SIG UP." <<endl;
 #endif
-	//Read PackageHead.
-	//Set UDT_RECVTIMEO
-	//int timeout = 1;
-	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
 	int receivebyte = udtRecvNoBlock(eid, uSocket, buffer, PHS);
 
 	if(receivebyte < 0){
@@ -388,9 +363,6 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #endif
 		return 0;
 	}
-	//timeout = -1;
-	//UDT::setsockopt(uSocket, 0, UDT_RCVTIMEO, &timeout, sizeof(int));
-	//No tSocket get. Client get a error Data. Remove the Data. Send RESET SIG.
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
 		udtRecv(uSocket, buffer + PHS, head->length);
@@ -442,10 +414,8 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	memcpy(newbuffer.buffer, buffer + PHS + sendsize, size - sendsize);
 	info->buffers.push_back(newbuffer);
 	info->size += (size - sendsize);
-	if(random1()<0.2){
-		head->length = -10000 - info->size;
-		udtSend(uSocket,buffer, PHS);
-	}
+	head->length = -10000 - info->size;
+	udtSend(uSocket,buffer, PHS);
 	info->sendblock = true;
 #ifdef DEBUG
 	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<size<<" Sendsize: "<<sendsize<<" Totalsize: "<<info->size<<endl;
