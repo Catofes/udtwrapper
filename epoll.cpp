@@ -456,6 +456,9 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 
 int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 {
+#ifdef DEBUG
+	cout<<"[D] DownloadB2T SIG UP."<<endl;
+#endif
 	int sendsize = 0;
 	if(manage.tsocket_clientinfo.find(tSocket) == manage.tsocket_clientinfo.end())
 	{
@@ -475,9 +478,8 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 	BufferInfo * buffer = &(info->buffers[0]);
 	sendsize = tcpSendNoBlock(tSocket, buffer->buffer + buffer->offset, buffer->size - buffer->offset);
 #ifdef DEBUG
-	cout<<"DownloadB2T SIG UP. Send: "<<sendsize<<endl;
+	cout<<"[D] DownloadB2T Send: "<<sendsize<<endl;
 #endif
-
 	if(sendsize == buffer->size - buffer->offset){
 		delete buffer->buffer;
 		info->buffers.erase(info->buffers.begin());
@@ -488,16 +490,19 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 	if(sendsize == -1 && (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)))
 	{
 #ifdef DEBUG
-		cout<<"DownloadB2T TCP Broken. At:"<<errno<<endl;
+		cout<<"[D] DownloadB2T TCP Broken. At:"<<errno<<endl;
 #endif
 		PackageHead head;
 		head.length = -1;
 		head.sessionId = info->sessionId;
 		udtSend(uSocket,(char *) &head, PHS);
+		for(int i=0;i<info->buffers.size();i++)
+		  delete info->buffers[i].buffer;
 		closeTCP(eid, tSocket, 2, manage);
 		return -1;
 	}
-	sendsize = 0;
+	if(sendsize < 0)
+	  sendsize = 0;
 	buffer->offset += sendsize;
 	info->size -= sendsize;
 	PackageHead head;
