@@ -442,8 +442,10 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	memcpy(newbuffer.buffer, buffer + PHS + sendsize, size - sendsize);
 	info->buffers.push_back(newbuffer);
 	info->size += (size - sendsize);
-	head->length = -10000 - info->size;
-	udtSend(uSocket,buffer, PHS);
+	if(random1()<0.2){
+		head->length = -10000 - info->size;
+		udtSend(uSocket,buffer, PHS);
+	}
 	info->sendblock = true;
 #ifdef DEBUG
 	cout<<"[D] Tcp buffer data. Socket: "<<tSocket<<" Size: "<<size<<" Sendsize: "<<sendsize<<" Totalsize: "<<info->size<<endl;
@@ -505,9 +507,11 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 	  sendsize = 0;
 	buffer->offset += sendsize;
 	info->size -= sendsize;
-	PackageHead head;
-	head.length = -10000 - info->size;
-	head.sessionId = info->sessionId;
-	udtSend(uSocket,(char *) &head, PHS); 
+	if(info->size < 1000000){
+		PackageHead head;
+		head.length = -10000 - info->size;
+		head.sessionId = info->sessionId;
+		udtSend(uSocket,(char *) &head, PHS); 
+	}
 	return 0;
 }
