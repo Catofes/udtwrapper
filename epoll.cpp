@@ -456,6 +456,12 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 		delete buffer->buffer;
 		info->buffers.erase(info->buffers.begin());
 		info->size -= sendsize;
+		if(info->size < 1000000){
+			PackageHead head;
+			head.length = -10000 - info->size;
+			head.sessionId = info->sessionId;
+			udtSend(uSocket,(char *) &head, PHS); 
+		}
 		return 0;
 	}
 
