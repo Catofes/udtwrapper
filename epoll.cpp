@@ -468,8 +468,6 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 		head.length = -1;
 		head.sessionId = info->sessionId;
 		udtSend(uSocket,(char *) &head, PHS);
-		for(int i=0;i<info->buffers.size();i++)
-		  delete info->buffers[i].buffer;
 		closeTCP(eid, tSocket, 2, manage);
 		return -1;
 	}
