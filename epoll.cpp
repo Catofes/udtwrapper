@@ -357,11 +357,14 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 #endif
 	int receivebyte = udtRecvNoBlock(eid, uSocket, buffer, PHS);
 
-	if(receivebyte < 0){
+	if(receivebyte == -2){
 #ifdef DEBUG
-		cout<<"Error Sig Happend"<<endl;
+		cout<<"[D] Error Sig Happend"<<endl;
 #endif
 		return 0;
+	}
+	if(receivebyte == -1){
+		cout<<"[E] UDT Error. At:"<<UDT::getlasterror().getErrorMessage()<<endl;
 	}
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
