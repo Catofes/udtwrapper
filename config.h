@@ -49,7 +49,7 @@ class Config
 			maxT = 100000;
 			maxS = 900;
 			p = 0.2;
-			maxSlowBuffer=200000;
+			maxSlowBuffer=2000000;
 		};
 };
 
