@@ -39,6 +39,8 @@ float random1()
 
 int GabageClean(int t, int eid, SessionManage &manage, Config &config)
 {
+	if(t>config.maxT)
+	  t=config.maxT;
 	if(random1() > (t/config.maxT)*(t/config.maxT) || random1() > (manage.getsize()/config.maxS)*(manage.getsize()/config.maxS))
 	  return 0;
 	int gcNum = rand()%((int)(manage.getsize()*config.p*(t/config.maxT)*(t/config.maxT)*(t/config.maxT)) + 1) + 1;
@@ -459,7 +461,7 @@ int downloadB2T(int eid, int tSocket, int uSocket, SessionManage &manage)
 		delete buffer->buffer;
 		info->buffers.erase(info->buffers.begin());
 		info->size -= sendsize;
-		if(info->size < 1000000){
+		if(info->size < 20000){
 			PackageHead head;
 			head.length = -10000 - info->size;
 			head.sessionId = info->sessionId;
