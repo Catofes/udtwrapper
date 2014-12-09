@@ -236,8 +236,18 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 		closeUDT(eid, uSocket, manage);
 		return 0;
 	}
-
 	int tSocket;
+		//Reset
+	if(head->length == -1){
+		tSocket = manage.gettSocket(uSocket,head->sessionId);
+		if(tSocket < 0)
+		  return 0;
+#ifdef DEBUG
+		cout<<"[D] Reset SIG received. SessionId: "<<head->sessionId<<endl;
+#endif
+		closeTCP(eid, tSocket, 2, manage);
+		return 0;
+	}
 	//If sessionId is new, Setup new tcp connection.
 	if((tSocket = manage.gettSocket(uSocket, head->sessionId)) == -1){
 		tSocket = tcpConnect(config);
@@ -247,15 +257,6 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 #ifdef DEBUG
 		cout<<"[D] SessionManage Size:"<<manage.getsize()<<endl;
 #endif
-	}
-
-	//Reset
-	if(head->length == -1){
-#ifdef DEBUG
-		cout<<"[D] Reset SIG received." <<endl;
-#endif
-		closeTCP(eid, tSocket, 2,manage);
-		return 0;
 	}
 
 	if(head->length <= -10000){
@@ -310,7 +311,7 @@ int uploadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encrypt
 int downloadT2U(int eid, int tSocket, char* buffer, SessionManage &manage, Encrypt &encrypt)
 {
 #ifdef DEBUG
-	cout<<"[D] DownloadT2U SIG UP."<<endl;
+	cout<<"[D] DownloadT2U SIG UP. Socket: "<<tSocket<<endl;
 #endif
 	int size = recv(tSocket, &buffer[PHS], BS-PHS, 0);
 	PackageHead * head = (PackageHead*) buffer;
@@ -370,6 +371,9 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 	}
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
+#ifdef DEBUG
+		cout<<"[D] Unknow data received. Send RST SIG. Session: "<<head->sessionId<<endl;
+#endif
 		udtRecv(uSocket, buffer + PHS, head->length);
 		head->length = -1;
 		udtSend(uSocket, buffer, PHS);
