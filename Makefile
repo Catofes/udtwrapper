@@ -22,3 +22,4 @@ debug:
 	rm *.o
 
 clean:
+	rm *.out
