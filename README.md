@@ -20,9 +20,22 @@ Client: run `./client.out 10000 server_ip 10000`. Then set broswer's socks5 to 1
 
 TODO List:
 
-* -IPv6 Support.- (Worked. add -6 parameter follow client.out and server.out)
-* Client Auto Reconnect.
-* Encrypt Support.
+Version 2.0.0
+	
+* Rewrite the code. 
+* Transform data via multi-UDT/TCP connection.
+* TCP mode.
+* Client Server message. Client can jump form one port to another.
+* One Client connect to multi server.
+* Server support a control api use TCP socket.
+
+ChangLog:
+
+Version 1.0.0 
+
+* IPv6 Support. (Worked. add -6 parameter follow client.out and server.out)
+* Client Auto Reconnect. (May worked).
+* Encrypt Support. (Simple encrypt work).
 
 Bug To Fix:
 
