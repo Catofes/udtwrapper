@@ -367,7 +367,10 @@ int downloadU2T(int eid, int uSocket, char* buffer, SessionManage &manage, Encry
 		return 0;
 	}
 	if(receivebyte == -1){
+		UDT::epoll_remove_usock(eid,uSocket);
+		UDT::close(uSocket);
 		cout<<"[E] UDT Error. At:"<<UDT::getlasterror().getErrorMessage()<<endl;
+		return -1;
 	}
 	int tSocket;
 	if((tSocket = manage.gettSocket(0, head->sessionId)) < 0){
