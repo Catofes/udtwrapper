@@ -45,7 +45,7 @@ class Config
 			maxPending = 1024;
 			IPV6 = false;
 			finTimeout = 60;
-			keepliveTimeout = 3600;
+			keepliveTimeout = 8000;
 			maxT = 100000;
 			maxS = 900;
 			p = 0.2;
