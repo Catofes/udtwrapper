@@ -48,7 +48,7 @@ int clientLoop(Config &config, Encrypt &encrypt)
 		int ret = UDT::epoll_wait(eid, &readfds, NULL, -1 , &sreadfds, &swritefds);
 		gettimeofday(&nowwake,0);
 		for(set<UDTSOCKET>::iterator i = readfds.begin(); i != readfds.end(); ++i){
-			downloadU2T(eid, *i, buffer, manage, encrypt);
+			downloadU2T(eid, uSocket, buffer, manage, encrypt);
 		}
 		for(set<int>::iterator i = sreadfds.begin(); i != sreadfds.end(); ++i){
 			if(*i == tSocket){
