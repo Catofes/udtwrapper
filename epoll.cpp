@@ -27,7 +27,7 @@ using namespace std;
 #include "encrypt.h"
 #include "epoll.h"
 #include "config.h"
-
+#include "cc.h"
 
 void signal_callback_handler(int signum){
 }
@@ -73,6 +73,12 @@ int udtAcpt(int eid, int uSocket, Config &config)
 		inet_ntop(AF_INET6, &clientaddr.sin6_addr,str,sizeof(str));
 		cout << "[I] Accpet a UDT connection form " << str << ":" << ntohs(clientaddr.sin6_port) << endl;
 		UDT::epoll_add_usock(eid, connfd);
+		                UDT::setsockopt(connfd, 0, UDT_CC, new CCCFactory<CUDPBlast> , sizeof(CCCFactory<CUDPBlast> ));
+                CUDPBlast* cchandle = NULL;
+                int temp;
+                UDT::getsockopt(connfd, 0, UDT_CC, &cchandle, &temp);
+                cchandle->setRate(35);
+
 		return connfd;
 
 	}else{
@@ -89,6 +95,11 @@ int udtAcpt(int eid, int uSocket, Config &config)
 		}
 		char *str = inet_ntoa(clientaddr.sin_addr);
 		cout << "[I] Accpet a UDT connection form " << str << ":" << ntohs(clientaddr.sin_port) << endl;
+		UDT::setsockopt(connfd, 0, UDT_CC, new CCCFactory<CUDPBlast> , sizeof(CCCFactory<CUDPBlast> ));
+		CUDPBlast* cchandle = NULL;
+		int temp;
+		UDT::getsockopt(connfd, 0, UDT_CC, &cchandle, &temp);
+		cchandle->setRate(35);
 		UDT::epoll_add_usock(eid, connfd);
 		return connfd;
 	}

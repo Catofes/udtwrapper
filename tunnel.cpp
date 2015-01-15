@@ -15,7 +15,7 @@
 using namespace std;
 #include "tunnel.h"
 #include "config.h"
-
+#include "cc.h"
 void setTimeOut(int tSocket)
 {
 	int nNetTimeout=60000;
@@ -117,6 +117,12 @@ int udtListen(Config &config)
 		return -3;
 	}
 	cout << "[I] UDT listen sucessfully." << endl;
+	UDT::setsockopt(sock, 0, UDT_CC, new CCCFactory<CUDPBlast> , sizeof(CCCFactory<CUDPBlast> ));
+	CUDPBlast* cchandle = NULL;
+	int temp;
+	UDT::getsockopt(sock, 0, UDT_CC, &cchandle, &temp);
+if(cchandle != NULL)	
+cchandle->setRate(35);
 	return sock;
 }
 
@@ -171,7 +177,7 @@ int udtRecv(int sock, char *buffer, int size)
 	int index = 0, ret;
 	while(size) {
 		if((ret = UDT::recv(sock, &buffer[index], size, 0)) <= 0)
-		  return (!ret) ? index : -1;
+			return (!ret) ? index : -1;
 		index += ret;
 		size -= ret;
 	}
@@ -200,7 +206,7 @@ int udtRecvNoBlock(int eid, int sock, char *buffer, int size)
 	index += ret;
 	while(size > 0) {
 		if((ret = UDT::recv(sock, &buffer[index], size, 0)) <= 0)
-		  return (!ret) ? index : -1;
+			return (!ret) ? index : -1;
 		index += ret;
 		size -= ret;
 	}
@@ -212,7 +218,7 @@ int udtSend(int sock, const char *buffer, int size)
 	int index = 0, ret;
 	while(size) {
 		if((ret = UDT::send(sock, &buffer[index], size, 0)) <=0)
-		  return (!ret) ? index : -1;
+			return (!ret) ? index : -1;
 		index += ret;
 		size -= ret;
 	}
@@ -224,7 +230,7 @@ int tcpRecv(int sock, char *buffer, int size)
 	int index = 0, ret;
 	while(size) {
 		if((ret = recv(sock, &buffer[index], size, 0)) <= 0)
-		  return (!ret) ? index : -1;
+			return (!ret) ? index : -1;
 		index += ret;
 		size -= ret;
 	}
@@ -257,7 +263,7 @@ int tcpSendNoBlock(int sock, const char *buffer, int size)
 {
 	int ret = send(sock, buffer, size, 0);
 	if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) )
-	  return -2;
+		return -2;
 	return ret;
 }
 

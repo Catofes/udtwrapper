@@ -21,6 +21,7 @@ using namespace std;
 #include "encrypt.h"
 #include "epoll.h"
 #include "config.h"
+#include "cc.h"
 
 int serverLoop(Config &config, Encrypt &encrypt)
 {
