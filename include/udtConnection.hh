@@ -30,7 +30,7 @@ public:
 
     int Listen();
 
-    int Shutdown();
+    int Close();
 
 private:
 

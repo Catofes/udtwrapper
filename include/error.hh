@@ -10,7 +10,7 @@
 
 using std::exception;
 
-namespace Head
+namespace HeadSpace
 {
     class ParseZero : exception
     {
@@ -31,6 +31,40 @@ namespace Head
     public:
         UnknownType()
         { Log::Log("Unknow Type", 5); };
+    };
+}
+
+namespace UConnect
+{
+    class WrongIpAddress : exception
+    {
+    public:
+        WrongIpAddress()
+        { Log::Log("UDT Get Wrong Ip Address.", 5); }
+    };
+
+    class ConnectionFailed : exception
+    {
+    public:
+        ConnectionFailed()
+        { Log::Log("UDT Connection Failed.", 5); }
+    };
+}
+
+namespace TConnect
+{
+    class WrongIpAddress : exception
+    {
+    public:
+        WrongIpAddress()
+        { Log::Log("UDT Get Wrong Ip Address.", 5); }
+    };
+
+    class ConnectionFailed : exception
+    {
+    public:
+        ConnectionFailed()
+        { Log::Log("UDT Connection Failed.", 5); }
     };
 }
 #endif //UDTWRAPPER_ERROR_HH

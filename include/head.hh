@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#define BS=2048;
+#define BS 2048;
 
 namespace Session
 {
@@ -33,7 +33,7 @@ namespace Connection
     };
 }
 
-namespace Head
+namespace HeadSpace
 {
     enum HeadType
     {
@@ -49,7 +49,7 @@ namespace Head
 class Head
 {
 public:
-    Head::HeadType type;
+    HeadSpace::HeadType type;
     uint8_t head_length;
     uint32_t address;
     uint16_t port;

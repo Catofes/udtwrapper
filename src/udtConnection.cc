@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <error.hh>
 
 udtConnection::udtConnection()
 {
@@ -21,7 +22,7 @@ udtConnection::udtConnection(UDTSOCKET socket)
 
 udtConnection::~udtConnection()
 {
-    Shutdown();
+    Close();
 }
 
 int udtConnection::Bind(std::string address, uint16_t port)
@@ -60,8 +61,9 @@ int udtConnection::Bind(std::string address, uint16_t port)
 int udtConnection::Listen()
 {
     if (udt_socket == 0)
-        throw std::runtime_error("Listen Error. Not Bind Yet.");
-    UDT::listen(udt_socket, 100);
+        throw std::runtime_error("UDT Listen Error. Not Bind Yet.");
+    if (!listen(udt_socket, 100) == 0)
+        throw std::runtime_error("UDT Listen Error.");
     return 0;
 }
 
@@ -71,16 +73,14 @@ int udtConnection::Connect(std::string address, uint16_t port)
         Init();
 
     if (inet_aton(address.c_str(), &(connect_addr.sin_addr)) == 0) {
-        cout << "[E] Wrong Ip Address." << endl;
-        return -1;
+        throw TConnect::WrongIpAddress();
     }
     connect_addr.sin_family = AF_INET;
     connect_addr.sin_port = htons(port);
     memset(&(connect_addr.sin_zero), '\0', 8);
     if (UDT::ERROR == connect(udt_socket, (sockaddr *) &(connect_addr), sizeof(connect_addr))) {
-        cout << "[E] connection failed." << endl;
-        cout << "[D] " << UDT::getlasterror().getErrorMessage() << endl;
-        return -1;
+        Log::Log(UDT::getlasterror().getErrorMessage(), 5);
+        throw TConnect::ConnectionFailed();
     }
     return 0;
 }
@@ -93,7 +93,7 @@ int udtConnection::Init()
     return 0;
 }
 
-int udtConnection::Shutdown()
+int udtConnection::Close()
 {
     if (udt_socket != 0) {
         UDT::close(udt_socket);

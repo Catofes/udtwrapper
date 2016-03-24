@@ -13,6 +13,7 @@ set(SOURCE
         src/epoll.cc
         src/config.cc
         src/udtConnection.cc
+        src/tcpConnection.cc
         main.cc)
 
 add_executable(main ${SOURCE})
