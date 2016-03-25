@@ -24,6 +24,11 @@ public:
         return udt_socket;
     }
 
+    inline void SetSocket(int s)
+    {
+        udt_socket = s;
+    }
+
     int Connect(std::string address, uint16_t port);
 
     int Bind(std::string address, uint16_t port);
@@ -31,6 +36,8 @@ public:
     int Listen();
 
     int Close();
+
+    friend class Session;
 
 private:
 

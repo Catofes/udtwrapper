@@ -48,9 +48,7 @@ int udtConnection::Bind(std::string address, uint16_t port)
         throw std::runtime_error("Cannot Bind UDP Socket.");
 
     //Generate udt socket
-    udt_socket = UDT::socket(AF_INET, SOCK_STREAM, 0);
-    if (udt_socket < 0)
-        throw std::runtime_error("Cannot Init UDT Socket.");
+    Init();
 
     //Bind udt to tdp
     if (UDT::bind2(udt_socket, udp_socket) < 0)
@@ -62,7 +60,7 @@ int udtConnection::Listen()
 {
     if (udt_socket == 0)
         throw std::runtime_error("UDT Listen Error. Not Bind Yet.");
-    if (!listen(udt_socket, 100) == 0)
+    if (!UDT::listen(udt_socket, 100) == 0)
         throw std::runtime_error("UDT Listen Error.");
     return 0;
 }
@@ -90,7 +88,9 @@ int udtConnection::Init()
     udt_socket = UDT::socket(AF_INET, SOCK_STREAM, 0);
     if (udt_socket == 0)
         throw std::runtime_error("Cannot Init UDT socket.");
-    return 0;
+    bool blocking = false;
+    UDT::setsockopt(udt_socket, 0, UDT_RCVSYN, &blocking, sizeof(bool));
+    return udt_socket;
 }
 
 int udtConnection::Close()

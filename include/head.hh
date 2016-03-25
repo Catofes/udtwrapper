@@ -7,17 +7,24 @@
 
 #include <stdint.h>
 
-#define BS 2048;
+const int BS=2048;
 
-namespace Session
+namespace SessionSpace
 {
     enum SessionStatus
     {
+        INIT,
         CONNECTING,
         PIPE,
         UPLOADING,
         DOWNLOADING,
         FIN,
+    };
+
+    enum Direction
+    {
+        TCP2UDT,
+        UDT2TCP,
     };
 }
 
@@ -42,8 +49,6 @@ namespace HeadSpace
         FIN,
         RST,
     };
-
-
 }
 
 class Head

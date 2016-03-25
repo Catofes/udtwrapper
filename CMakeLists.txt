@@ -6,15 +6,22 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lpthread")
 
 include_directories(include udt4-fork/src)
 
-set(SOURCE
+set(UDT4WRAPPERLIB
         src/log.cc
         src/error.cc
         src/head.cc
         src/epoll.cc
         src/config.cc
+        src/sessionManager.cc
+        src/session.cc
         src/udtConnection.cc
         src/tcpConnection.cc
-        main.cc)
+        )
 
-add_executable(main ${SOURCE})
-target_link_libraries(main ${UDT4_LIBS})
+add_library(udt4wrapper SHARED ${UDT4WRAPPERLIB})
+target_link_libraries(udt4wrapper ${UDT4_LIBS})
+
+add_executable(server server.cc)
+target_link_libraries(server udt4wrapper ${UDT4_LIBS})
+add_executable(client client.cc)
+target_link_libraries(client udt4wrapper ${UDT4_LIBS})

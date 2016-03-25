@@ -22,6 +22,11 @@ public:
         return tcp_socket;
     }
 
+    inline void SetSocket(int socket)
+    {
+        tcp_socket = socket;
+    }
+
     int Connect(std::string address, uint16_t port);
 
     int Bind(std::string address, uint16_t port);
@@ -29,6 +34,8 @@ public:
     int Listen();
 
     int Close();
+
+    friend class Session;
 
 private:
 

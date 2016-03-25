@@ -7,26 +7,33 @@
 
 #include <stdexcept>
 #include <log.hh>
+#include <errno.h>
+#include <udt.h>
 
-using std::exception;
+class UException : std::exception
+{
+public:
+    UException()
+    { };
+};
 
 namespace HeadSpace
 {
-    class ParseZero : exception
+    class ParseZero : UException
     {
     public:
         ParseZero()
         { Log::Log("Parse 0 Size Head. Skip.", 1); };
     };
 
-    class Partial : exception
+    class Partial : UException
     {
     public:
         Partial()
         { Log::Log("Particle Head.", 0); };
     };
 
-    class UnknownType : exception
+    class UnknownType : UException
     {
     public:
         UnknownType()
@@ -36,14 +43,14 @@ namespace HeadSpace
 
 namespace UConnect
 {
-    class WrongIpAddress : exception
+    class WrongIpAddress : UException
     {
     public:
         WrongIpAddress()
         { Log::Log("UDT Get Wrong Ip Address.", 5); }
     };
 
-    class ConnectionFailed : exception
+    class ConnectionFailed : UException
     {
     public:
         ConnectionFailed()
@@ -53,18 +60,49 @@ namespace UConnect
 
 namespace TConnect
 {
-    class WrongIpAddress : exception
+    class WrongIpAddress : UException
     {
     public:
         WrongIpAddress()
         { Log::Log("UDT Get Wrong Ip Address.", 5); }
     };
 
-    class ConnectionFailed : exception
+    class ConnectionFailed : UException
     {
     public:
         ConnectionFailed()
         { Log::Log("UDT Connection Failed.", 5); }
+    };
+}
+
+namespace SManager
+{
+    class NotFound : UException
+    {
+    public:
+        NotFound()
+        { Log::Log("Session Not Found.", 3); }
+    };
+}
+
+namespace EpollSpace
+{
+    class TcpAcceptError : UException
+    {
+    public:
+        TcpAcceptError()
+        { Log::Log("Tcp Accept Error. " + errno, 3); }
+    };
+
+    class UdtAcceptError : UException
+    {
+    public:
+        UdtAcceptError()
+        {
+            string str = "Udt Accept Error. ";
+            str += UDT::getlasterror().getErrorMessage();
+            Log::Log(str, 3);
+        }
     };
 }
 #endif //UDTWRAPPER_ERROR_HH

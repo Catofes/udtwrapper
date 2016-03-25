@@ -36,9 +36,7 @@ int tcpConnection::Bind(std::string address, uint16_t port)
         throw std::runtime_error("Unknow Address.");
 
     //Generate udp socket
-    tcp_socket = socket(PF_INET, SOCK_STREAM, 0);
-    if (tcp_socket < 0)
-        throw std::runtime_error("Cannot Init TCP Socket.");
+    Init();
 
     //Set transparent to allow tproxy
     int opt = 1;
@@ -79,10 +77,10 @@ int tcpConnection::Connect(std::string address, uint16_t port)
 
 int tcpConnection::Init()
 {
-    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+    tcp_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (tcp_socket == 0)
         throw std::runtime_error("Cannot Init TCP socket.");
-    return 0;
+    return tcp_socket;
 }
 
 int tcpConnection::Close()
