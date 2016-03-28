@@ -65,6 +65,8 @@ public:
 
     int Write(char *buffer, uint16_t size);
 
+    int CheckWrite();
+
     friend class Session;
 
 private:
@@ -75,7 +77,7 @@ private:
 
     Connection::ConnectionStatus status;
 
-    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR;
+    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
 
     struct sockaddr_in bind_addr;
     struct sockaddr_in connect_addr;

@@ -33,8 +33,8 @@ int Head::ReadConnect(char *data, uint16_t size)
 {
     if (size < 7)
         throw HeadSpace::Partial();
-    address = (uint32_t) data[1];
-    port = (uint16_t) data[5];
+    memcpy(&address, data + 5, sizeof(address));
+    memcpy(&port, data + 5, sizeof(port));
     return 0;
 }
 
@@ -42,7 +42,7 @@ int Head::ReadData(char *data, uint16_t size)
 {
     if (size < 3)
         throw HeadSpace::Partial();
-    data_length = (uint16_t) data[1];
+    memcpy(&data_length, data + 1, sizeof(data_length));
     return 0;
 }
 

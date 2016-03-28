@@ -38,6 +38,7 @@ int tcpConnection::Bind(uint32_t address, uint16_t port)
     //Set transparent to allow tproxy
     int opt = 1;
     setsockopt(tcp_socket, SOL_IP, IP_TRANSPARENT, &opt, sizeof(opt));
+    setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     //Bind udp_socket
     if (bind(tcp_socket, (struct sockaddr *) &bind_addr, sizeof(bind_addr)) < 0)
@@ -64,10 +65,9 @@ int tcpConnection::Connect(uint32_t address, uint16_t port)
     connect_addr.sin_family = AF_INET;
     connect_addr.sin_port = htons(port);
     memset(&(connect_addr.sin_zero), '\0', 8);
-    if (!(connect(tcp_socket, (sockaddr *) &(connect_addr), sizeof(connect_addr))) == 0) {
-        Log::Log(strerror(errno), 5);
+    connect(tcp_socket, (sockaddr *) &(connect_addr), sizeof(connect_addr));
+    if (errno != EINPROGRESS && errno != EALREADY)
         throw TConnect::ConnectionFailed();
-    }
     return 0;
 }
 
@@ -99,6 +99,12 @@ int tcpConnection::Read(char *buffer, uint16_t size)
                 throw TConnect::EError();
         }
     }
+    string str = "TCP Read ";
+    str += std::to_string(s);
+    str += " Bits.";
+    Log::Log(str, 0);
+    if (size > 0 && s == 0)
+        throw TConnect::EFin();
     return s;
 }
 
@@ -113,5 +119,19 @@ int tcpConnection::Write(char *buffer, uint16_t size)
                 throw TConnect::EError();
         }
     }
+    string str = "TCP Write ";
+    str += std::to_string(s);
+    str += " Bits.";
+    Log::Log(str, 0);
     return s;
+}
+
+int tcpConnection::CheckWrite()
+{
+    int err = 0;
+    socklen_t errlen = sizeof(err);
+    if (getsockopt(tcp_socket, SOL_SOCKET, SO_ERROR, &err, &errlen) < 0)
+        throw TConnect::GetSockOptError();
+    if (err != 0 && err != EINPROGRESS && err != EAGAIN)
+        throw TConnect::EConnectError();
 }

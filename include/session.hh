@@ -66,7 +66,7 @@ private:
     inline void Log(string s, char l)
     {
         string str = "Session ";
-        str += session_id;
+        str += to_string(session_id);
         str += " :";
         str += s;
         Log::Log(str, l);

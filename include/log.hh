@@ -14,6 +14,7 @@ using std::string;
 
 namespace Log
 {
+
     void Log(string log, char level);
 
     void StdLog(string log, char level);

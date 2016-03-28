@@ -47,6 +47,8 @@ void Session::Rst()
 void Session::BlockTcp(bool f)
 {
     if (f) {
+        if (tcp.status == Connection::BLOCKING)
+            return;
         Log("Enter Tcp Block.", 1);
         tcp.status = Connection::BLOCKING;
         tcp.event = tcp.event | EPOLLOpt::UDT_EPOLL_OUT;
@@ -58,6 +60,8 @@ void Session::BlockTcp(bool f)
         if (udt.event != 0)
             UDT::epoll_add_usock(manager->GetEpoll(), udt.udt_socket, &(udt.event));
     } else {
+        if (tcp.status == Connection::PIPE)
+            return;
         Log("Leave Tcp Block.", 1);
         tcp.status = Connection::PIPE;
         tcp.event = tcp.event & (EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
@@ -76,6 +80,8 @@ void Session::BlockTcp(bool f)
 void Session::BlockUdt(bool f)
 {
     if (f) {
+        if (udt.status == Connection::BLOCKING)
+            return;
         Log("Enter Udt Block.", 1);
         udt.status = Connection::BLOCKING;
         udt.event = udt.event | EPOLLOpt::UDT_EPOLL_OUT;
@@ -87,6 +93,8 @@ void Session::BlockUdt(bool f)
         if (tcp.event != 0)
             UDT::epoll_add_ssock(manager->GetEpoll(), tcp.tcp_socket, &(tcp.event));
     } else {
+        if (udt.status == Connection::PIPE)
+            return;
         Log("Leave Udt Block.", 1);
         udt.status = Connection::PIPE;
         udt.event = udt.event & (EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
@@ -186,7 +194,7 @@ void Session::UploadRead()
             upload_read_offset += tcp.Read(upload_read_buffer + upload_read_offset, DS - upload_read_offset);
             break;
         case SessionSpace::UDT2TCP:
-            upload_read_offset += udt.Read(upload_read_buffer + upload_read_offset, DS - upload_read_offset);
+            upload_read_offset += udt.Read(upload_read_buffer + upload_read_offset, BS - upload_read_offset);
             break;
     }
 }
@@ -197,10 +205,10 @@ void Session::DownloadRead()
     Head head;
     switch (direction) {
         case SessionSpace::UDT2TCP:
-            upload_read_offset += tcp.Read(upload_read_buffer + upload_read_offset, DS - upload_read_offset);
+            download_read_offset += tcp.Read(download_read_buffer + download_read_offset, DS - download_read_offset);
             break;
         case SessionSpace::TCP2UDT:
-            upload_read_offset += udt.Read(upload_read_buffer + upload_read_offset, DS - upload_read_offset);
+            download_read_offset += udt.Read(download_read_buffer + download_read_offset, BS - download_read_offset);
             break;
     }
 }
@@ -211,13 +219,31 @@ void Session::SendFin(SessionSpace::Direction d)
     switch (d) {
         case SessionSpace::TCP2UDT:
             Log("Send Fin to UDT.", 1);
+
+            tcp.event = tcp.event & (EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR);
+            UDT::epoll_remove_ssock(manager->epoll, tcp.tcp_socket);
+            if (tcp.event != 0)
+                UDT::epoll_add_ssock(manager->epoll, tcp.tcp_socket, &tcp.event);
+
             head.type = HeadSpace::FIN;
-            upload_write_length += head.Pack(upload_write_buffer + upload_write_offset + upload_write_length);
-            UploadWrite();
+            if (direction == SessionSpace::TCP2UDT) {
+                upload_write_length += head.Pack(upload_write_buffer + upload_write_offset + upload_write_length);
+                UploadWrite();
+            }
+            else {
+                download_write_length += head.Pack(
+                        download_write_buffer + download_write_offset + download_write_length);
+                DownloadWrite();
+            }
             udt.SendFin();
             break;
         case SessionSpace::UDT2TCP:
             Log("Send Fin to TCP.", 1);
+
+            udt.event = udt.event & (EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR);
+            UDT::epoll_remove_usock(manager->epoll, udt.udt_socket);
+            UDT::epoll_add_usock(manager->epoll, udt.udt_socket, &udt.event);
+
             if (tcp.status == Connection::PIPE)
                 tcp.SendFin();
             else {
@@ -229,18 +255,22 @@ void Session::SendFin(SessionSpace::Direction d)
 
 void Session::TcpReadInit()
 {
+    Log("Tcp Read Init.", 1);
     if (direction == SessionSpace::UDT2TCP)
         throw SessionSpace::ErrorStatus();
     udt.Connect(remote_address, remote_port);
+    manager->udt2session[udt.udt_socket] = this->session_id;
     BlockUdt(true);
     status = SessionSpace::CONNECTING;
 }
 
 void Session::UdtReadInit()
 {
-    if (direction == SessionSpace::UDT2TCP)
+    Log("Udt Read Init.", 1);
+    if (direction == SessionSpace::TCP2UDT)
         throw SessionSpace::ErrorStatus();
     tcp.Connect(remote_address, remote_port);
+    manager->tcp2session[tcp.tcp_socket] = this->session_id;
     BlockTcp(true);
     status = SessionSpace::CONNECTING;
 }
@@ -257,7 +287,7 @@ void Session::Tcp2Udt()
                 case SessionSpace::INIT:
                     break;
                 case SessionSpace::CONNECTING:
-                    Log("Send Connect Package.", 2);
+                    Log("Send Connect Command.", 1);
                     head.type = HeadSpace::CONNECT;
                     if (tproxy) {
                         head.address = remote_address;
@@ -301,8 +331,10 @@ void Session::Udt2Tcp()
     Head head;
     switch (direction) {
         case SessionSpace::TCP2UDT:
-            while (true) {
+            try {
                 DownloadRead();
+            } catch (UConnect::EAgain) { }
+            while (download_read_offset > 0) {
                 head.Read(download_read_buffer, download_read_offset);
                 switch (head.type) {
                     case HeadSpace::DATA:
@@ -317,22 +349,28 @@ void Session::Udt2Tcp()
                             memcpy(buffer, download_read_buffer + head.data_length + 3,
                                    download_read_offset - (head.data_length + 3));
                             memcpy(download_read_buffer, buffer, download_read_offset - (head.data_length + 3));
-                            download_read_offset -= (head.data_length + 3);
                         }
-                        UploadWrite();
+                        download_write_length += head.data_length;
+                        download_read_offset -= (head.data_length + 3);
+                        DownloadWrite();
                         break;
                     case HeadSpace::CONNECT:
                         throw HeadSpace::UnknownType();
                     case HeadSpace::FIN:
                         SendFin(SessionSpace::UDT2TCP);
+                        download_read_offset = 0;
                         break;
                     case HeadSpace::RST:
                         Close();
                 }
             }
+            break;
         case SessionSpace::UDT2TCP:
-            while (true) {
+            try {
                 UploadRead();
+            } catch (UConnect::EAgain) { }
+            bool f = true;
+            while (upload_read_offset > 0 && f) {
                 head.Read(upload_read_buffer, upload_read_offset);
                 switch (head.type) {
                     case HeadSpace::DATA:
@@ -347,24 +385,29 @@ void Session::Udt2Tcp()
                             memcpy(buffer, upload_read_buffer + head.data_length + 3,
                                    upload_read_offset - (head.data_length + 3));
                             memcpy(upload_read_buffer, buffer, upload_read_offset - (head.data_length + 3));
-                            upload_read_offset -= (head.data_length + 3);
                         }
+                        upload_write_length += head.data_length;
+                        upload_read_offset -= (head.data_length + 3);
                         UploadWrite();
                         break;
                     case HeadSpace::CONNECT:
+                        Log("Got Connect Command.", 1);
                         if (tproxy) {
                             remote_address = head.address;
                             remote_port = head.port;
-                            if (3 < upload_read_offset) {
-                                memcpy(buffer, upload_read_buffer + 3, upload_read_offset - 3);
-                                memcpy(upload_read_buffer, buffer, upload_read_offset - 3);
-                                upload_read_offset -= 3;
-                            }
                         }
+                        if (7 < upload_read_offset) {
+                            memcpy(buffer, upload_read_buffer + 7, upload_read_offset - 7);
+                            memcpy(upload_read_buffer, buffer, upload_read_offset - 7);
+                        }
+                        upload_read_offset -= 7;
                         UdtReadInit();
+                        //Get out of loop.
+                        f = false;
                         break;
                     case HeadSpace::FIN:
                         SendFin(SessionSpace::UDT2TCP);
+                        upload_read_offset = 0;
                         break;
                     case HeadSpace::RST:
                         Close();
@@ -376,13 +419,16 @@ void Session::Udt2Tcp()
 void Session::HandleTRead()
 {
     Fresh();
+    Log("TCP Read.", 1);
     try {
         switch (status) {
             case SessionSpace::INIT:
                 TcpReadInit();
                 break;
             case SessionSpace::CONNECTING:
-                throw SessionSpace::ErrorStatus();
+                if (direction == SessionSpace::UDT2TCP)
+                    tcp.CheckWrite();
+                break;
             case SessionSpace::PIPE:
                 Tcp2Udt();
                 break;
@@ -399,13 +445,16 @@ void Session::HandleTRead()
 void Session::HandleTWrite()
 {
     Fresh();
+    Log("TCP Write.", 1);
     try {
         switch (status) {
             case SessionSpace::INIT:
                 throw SessionSpace::ErrorStatus();
             case SessionSpace::CONNECTING:
+                tcp.CheckWrite();
                 status = SessionSpace::PIPE;
                 BlockTcp(false);
+                Udt2Tcp();
                 break;
             case SessionSpace::PIPE:
                 if (direction == SessionSpace::UDT2TCP)
@@ -424,13 +473,11 @@ void Session::HandleTWrite()
 void Session::HandleURead()
 {
     Fresh();
+    Log("UDT Read.", 1);
     try {
         switch (status) {
             case SessionSpace::INIT:
-                //TcpReadInit();
-                //break;
             case SessionSpace::CONNECTING:
-                //throw SessionSpace::ErrorStatus();
             case SessionSpace::PIPE:
                 Udt2Tcp();
                 break;
@@ -438,6 +485,7 @@ void Session::HandleURead()
                 break;
         }
     }
+    catch (HeadSpace::Partial) { }
     catch (UConnect::EAgain) { }
     catch (UConnect::EFin) { SendFin(SessionSpace::UDT2TCP); }
     catch (UConnect::EError) { Rst(); }
@@ -446,13 +494,14 @@ void Session::HandleURead()
 void Session::HandleUWrite()
 {
     Fresh();
+    Log("UDT Write.", 1);
     try {
         switch (status) {
             case SessionSpace::INIT:
                 throw SessionSpace::ErrorStatus();
             case SessionSpace::CONNECTING:
+                Tcp2Udt();
                 status = SessionSpace::PIPE;
-                BlockUdt(false);
                 break;
             case SessionSpace::PIPE:
                 if (direction == SessionSpace::TCP2UDT)

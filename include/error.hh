@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <udt.h>
 
-class UException : std::exception
+class UException : public std::exception
 {
 public:
     UException()
@@ -19,21 +19,21 @@ public:
 
 namespace HeadSpace
 {
-    class ParseZero : UException
+    class ParseZero : public UException
     {
     public:
         ParseZero()
         { Log::Log("Parse 0 Size Head. Skip.", 2); };
     };
 
-    class Partial : UException
+    class Partial : public UException
     {
     public:
         Partial()
         { Log::Log("Particle Head.", 1); };
     };
 
-    class UnknownType : UException
+    class UnknownType : public UException
     {
     public:
         UnknownType()
@@ -43,35 +43,35 @@ namespace HeadSpace
 
 namespace UConnect
 {
-    class WrongIpAddress : UException
+    class WrongIpAddress : public UException
     {
     public:
         WrongIpAddress()
         { Log::Log("UDT Get Wrong Ip Address.", 5); }
     };
 
-    class ConnectionFailed : UException
+    class ConnectionFailed : public UException
     {
     public:
         ConnectionFailed()
         { Log::Log("UDT Connection Failed.", 5); }
     };
 
-    class EAgain : UException
+    class EAgain : public UException
     {
     public:
         EAgain()
         { Log::Log("UDT EAgain.", 1); }
     };
 
-    class EError : UException
+    class EError : public UException
     {
     public:
         EError()
         { Log::Log("UDT READ/WRITE ERROR. RST.", 5); }
     };
 
-    class EFin : UException
+    class EFin : public UException
     {
     public:
         EFin()
@@ -81,45 +81,59 @@ namespace UConnect
 
 namespace TConnect
 {
-    class WrongIpAddress : UException
+    class WrongIpAddress : public UException
     {
     public:
         WrongIpAddress()
         { Log::Log("UDT Get Wrong Ip Address.", 5); }
     };
 
-    class ConnectionFailed : UException
+    class ConnectionFailed : public UException
     {
     public:
         ConnectionFailed()
-        { Log::Log("UDT Connection Failed.", 5); }
+        { Log::Log("TCP Connection Failed.", 5); }
     };
 
-    class EAgain : UException
+    class EAgain : public UException
     {
     public:
         EAgain()
         { Log::Log("TCP EAgain.", 1); }
     };
 
-    class EError : UException
+    class EError : public UException
     {
     public:
         EError()
         { Log::Log("TCP READ/WRITE ERROR. RST.", 5); }
     };
 
-    class EFin : UException
+    class EConnectError : public UException
+    {
+    public:
+        EConnectError()
+        { Log::Log("TCP Connect ERROR. RST.", 5); }
+    };
+
+    class EFin : public UException
     {
     public:
         EFin()
         { Log::Log("TCP Fin Received.", 2); }
     };
+
+    class GetSockOptError : public UException
+    {
+    public:
+        GetSockOptError()
+        { Log::Log("Get TCP Socket Option Error.", 3); }
+    };
 }
 
 namespace SManager
 {
-    class NotFound : UException
+    class NotFound : public UException
     {
     public:
         NotFound()
@@ -129,14 +143,14 @@ namespace SManager
 
 namespace EpollSpace
 {
-    class TcpAcceptError : UException
+    class TcpAcceptError : public UException
     {
     public:
         TcpAcceptError()
         { Log::Log("Tcp Accept Error. " + errno, 3); }
     };
 
-    class UdtAcceptError : UException
+    class UdtAcceptError : public UException
     {
     public:
         UdtAcceptError()
@@ -150,14 +164,14 @@ namespace EpollSpace
 
 namespace SessionSpace
 {
-    class ErrorStatus : UException
+    class ErrorStatus : public UException
     {
     public:
         ErrorStatus()
         { Log::Log("Error Session Status.", 3); }
     };
 
-    class SendData2Fin : UException
+    class SendData2Fin : public UException
     {
     public:
         SendData2Fin()

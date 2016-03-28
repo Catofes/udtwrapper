@@ -5,6 +5,7 @@
 #include <log.hh>
 #include <error.hh>
 #include <arpa/inet.h>
+#include <signal.h>
 #include "epoll.hh"
 #include "udt.h"
 
@@ -12,6 +13,7 @@
 UEpoll::UEpoll()
         : sessionManager(), udt_read_fds(), udt_write_fds(), tcp_read_fds(), tcp_write_fds()
 {
+    signal(SIGPIPE, SIG_IGN);
     epoll_id = 0;
 }
 
@@ -44,7 +46,7 @@ void UEpoll::InitClient(string s, uint16_t p)
 
 void UEpoll::InitServer(string s, uint16_t p)
 {
-    type = EpollType::Client;
+    type = EpollType::Server;
     epoll_id = UDT::epoll_create();
     if (epoll_id < 0)
         throw std::runtime_error("Cannot Init Epoll.");
@@ -99,7 +101,8 @@ void UEpoll::HandleTcpRead()
             session = sessionManager.GetSessionByTcp(t);
         }
         catch (UException) {
-            continue;
+            Log::Log("Unknown Session.", 3);
+            UDT::epoll_remove_ssock(epoll_id, t);
         }
         try {
             session->HandleTRead();
@@ -118,7 +121,8 @@ void UEpoll::HandleTcpWrite()
             session = sessionManager.GetSessionByTcp(t);
         }
         catch (UException) {
-            continue;
+            Log::Log("Unknown Session.", 3);
+            UDT::epoll_remove_ssock(epoll_id, t);
         }
         try {
             session->HandleTWrite();
@@ -144,7 +148,8 @@ void UEpoll::HandleUdtRead()
             session = sessionManager.GetSessionByUdt(u);
         }
         catch (UException) {
-            continue;
+            Log::Log("Unknown Session.", 3);
+            UDT::epoll_remove_usock(epoll_id, u);
         }
         try {
             session->HandleURead();
@@ -163,7 +168,8 @@ void UEpoll::HandleUdtWrite()
             session = sessionManager.GetSessionByUdt(u);
         }
         catch (UException) {
-            continue;
+            Log::Log("Unknown Session.", 3);
+            UDT::epoll_remove_usock(epoll_id, u);
         }
         try {
             session->HandleUWrite();
@@ -185,12 +191,14 @@ void UEpoll::AcceptTcp()
     string str = "Accept a connection from :";
     str += string(inet_ntoa(client_address.sin_addr));
     str += ": ";
-    str += ntohs(client_address.sin_port);
+    str += to_string(ntohs(client_address.sin_port));
     Log::Log(str, 2);
 
     sessionManager.CreateSessionByTcp(new_socket);
     int epoll_opt = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
-    UDT::epoll_add_ssock(epoll_id, new_socket, &epoll_opt);
+    if (UDT::epoll_add_ssock(epoll_id, new_socket, &epoll_opt) < 0)
+        throw std::runtime_error("Can't add socket to epoll. Exiting.");
+
 }
 
 void UEpoll::AcceptUdt()
@@ -204,10 +212,11 @@ void UEpoll::AcceptUdt()
     string str = "Accept a connection from :";
     str += string(inet_ntoa(client_address.sin_addr));
     str += ": ";
-    str += ntohs(client_address.sin_port);
+    str += to_string(ntohs(client_address.sin_port));
     Log::Log(str, 2);
 
     sessionManager.CreateSessionByUdt(new_socket);
     int epoll_opt = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
-    UDT::epoll_add_usock(epoll_id, new_socket, &epoll_opt);
+    if (UDT::epoll_add_usock(epoll_id, new_socket, &epoll_opt) < 0)
+        throw std::runtime_error("Can't add socket to epoll. Exiting.");
 }

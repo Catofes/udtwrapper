@@ -41,6 +41,7 @@ int udtConnection::Bind(uint32_t address, uint16_t port)
     //Set transparent to allow tproxy
     int opt = 1;
     setsockopt(udp_socket, SOL_IP, IP_TRANSPARENT, &opt, sizeof(opt));
+    setsockopt(udp_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     //Bind udp_socket
     if (bind(udp_socket, (struct sockaddr *) &bind_addr, sizeof(bind_addr)) < 0)
@@ -74,9 +75,9 @@ int udtConnection::Connect(uint32_t address, uint16_t port)
     connect_addr.sin_family = AF_INET;
     connect_addr.sin_port = htons(port);
     memset(&(connect_addr.sin_zero), '\0', 8);
-    if (UDT::ERROR == connect(udt_socket, (sockaddr *) &(connect_addr), sizeof(connect_addr))) {
+    if (UDT::ERROR == UDT::connect(udt_socket, (sockaddr *) &(connect_addr), sizeof(connect_addr))) {
         Log::Log(UDT::getlasterror().getErrorMessage(), 5);
-        throw TConnect::ConnectionFailed();
+        throw UConnect::ConnectionFailed();
     }
     return 0;
 }
@@ -116,6 +117,10 @@ int udtConnection::Read(char *buffer, uint16_t size)
                 throw UConnect::EError();
         }
     }
+    string str = "UDT Read ";
+    str += std::to_string(s);
+    str += " Bits.";
+    Log::Log(str, 0);
     return s;
 }
 
@@ -131,5 +136,9 @@ int udtConnection::Write(char *buffer, uint16_t size)
                 throw UConnect::EError();
         }
     }
+    string str = "UDT Write ";
+    str += std::to_string(s);
+    str += " Bits.";
+    Log::Log(str, 0);
     return s;
 }

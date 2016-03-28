@@ -11,9 +11,11 @@ void Log::Log(string input, char level)
 
 void Log::StdLog(string input, char level)
 {
+    //if (level < 3)
+    //    return;
     time_t now = time(NULL);
     struct tm *local = localtime(&now);
     char buf[80];
     strftime(buf, 80, "%Y-%m-%d %H:%M:%S", local);
-    cout << buf << " [" << level << "] " << input;
+    cout << buf << " [" << (int) level << "] " << input << endl;
 }

@@ -71,7 +71,7 @@ private:
     UDTSOCKET udt_socket;
     UDPSOCKET udp_socket;
 
-    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR;
+    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
 
     Connection::ConnectionStatus status;
 
