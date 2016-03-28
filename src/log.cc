@@ -11,8 +11,8 @@ void Log::Log(string input, char level)
 
 void Log::StdLog(string input, char level)
 {
-    //if (level < 3)
-    //    return;
+    if (level < 3)
+        return;
     time_t now = time(NULL);
     struct tm *local = localtime(&now);
     char buf[80];
