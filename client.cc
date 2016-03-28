@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     extern char *optarg;
     std::stringstream ss;
     while (true) {
-        const int option = getopt(argc, argv, "a:b:c:d");
+        const int option = getopt(argc, argv, "a:b:c:d:e");
         if (option == -1) break;
         switch (option) {
             case 'a':
