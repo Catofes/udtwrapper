@@ -90,12 +90,12 @@ private:
 
     char buffer[BS];
 
-    uint16_t upload_read_offset;
-    uint16_t upload_write_offset;
-    uint16_t upload_write_length;
-    uint16_t download_read_offset;
-    uint16_t download_write_offset;
-    uint16_t download_write_length;
+    uint16_t upload_read_offset = 0;
+    uint16_t upload_write_offset = 0;
+    uint16_t upload_write_length = 0;
+    uint16_t download_read_offset = 0;
+    uint16_t download_write_offset = 0;
+    uint16_t download_write_length = 0;
 
     bool upload_fin_flag = false;
     bool download_fin_flag = false;

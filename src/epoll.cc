@@ -7,7 +7,6 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include "epoll.hh"
-#include "udt.h"
 
 
 UEpoll::UEpoll()
