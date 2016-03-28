@@ -124,7 +124,10 @@ void Session::UploadWrite()
                 upload_write_length -= s;
                 if (upload_write_length == 0)
                     upload_write_offset = 0;
-                BlockUdt(false);
+                if (upload_write_length + upload_write_offset > BS)
+                    BlockUdt(true);
+                else
+                    BlockUdt(false);
                 break;
             case SessionSpace::UDT2TCP:
                 s = tcp.Write(data, upload_write_length);
@@ -132,7 +135,10 @@ void Session::UploadWrite()
                 upload_write_length -= s;
                 if (upload_write_length == 0)
                     upload_write_offset = 0;
-                BlockTcp(false);
+                if (upload_write_length + upload_write_offset > BS)
+                    BlockTcp(true);
+                else
+                    BlockTcp(false);
                 break;
         }
     }
@@ -162,7 +168,10 @@ void Session::DownloadWrite()
                 download_write_length -= s;
                 if (download_write_length == 0)
                     download_write_offset = 0;
-                BlockUdt(false);
+                if (download_write_length + download_write_offset > BS)
+                    BlockUdt(true);
+                else
+                    BlockUdt(false);
                 break;
             case SessionSpace::TCP2UDT:
                 s = tcp.Write(data, download_write_length);
@@ -170,7 +179,10 @@ void Session::DownloadWrite()
                 download_write_length -= s;
                 if (download_write_length == 0)
                     download_write_offset = 0;
-                BlockTcp(false);
+                if (download_write_length + download_write_offset > BS)
+                    BlockTcp(true);
+                else
+                    BlockTcp(false);
                 break;
         }
     }

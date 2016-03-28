@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.8)
 project(udtwrapper)
 
 find_library(UDT4_LIBS udt udt4-fork/src)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lpthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 include_directories(include udt4-fork/src)
 
