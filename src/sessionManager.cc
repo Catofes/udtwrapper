@@ -100,12 +100,12 @@ void SessionManager::GarbageCollection()
         for (std::pair<int, Session *> u:session_store) {
             if (t - u.second->GetTime() > 600) {
                 u.second->Close();
-                delete u;
+                delete u.second;
                 remove_session_ids.push_back(u.first);
             }
             else if (u.second->GetStatus() == SessionSpace::CLOSE) {
                 u.second->Close();
-                delete u;
+                delete u.second;
                 remove_session_ids.push_back(u.first);
             }
             if (remove_session_ids.size() > gc_max * GetSessionCount())

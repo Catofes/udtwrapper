@@ -79,6 +79,7 @@ void UEpoll::Loop()
         HandleTcpWrite();
         HandleUdtRead();
         HandleUdtWrite();
+        sessionManager.GarbageCollection();
         if (count < 0)
             throw std::runtime_error("EPOLL ERROR.");
     }
