@@ -28,11 +28,14 @@ void UEpoll::InitClient(string s, uint16_t p)
     if (epoll_id < 0)
         throw std::runtime_error("Cannot Init Epoll.");
     sessionManager.SetEpoll(epoll_id);
-    SetDestination(s, p);
+    uint32_t local_address;
+    uint16_t local_port;
+    inet_pton(AF_INET, s.c_str(), &(local_address));
+    local_port = p;
     tcp = new tcpConnection();
     tcp->SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
     try {
-        tcp->Bind(sessionManager.remote_address, sessionManager.remote_port);
+        tcp->Bind(local_address, local_port);
         tcp->Listen();
     }
     catch (UException) {
@@ -50,11 +53,14 @@ void UEpoll::InitServer(string s, uint16_t p)
     if (epoll_id < 0)
         throw std::runtime_error("Cannot Init Epoll.");
     sessionManager.SetEpoll(epoll_id);
-    SetDestination(s, p);
+    uint32_t local_address;
+    uint16_t local_port;
+    inet_pton(AF_INET, s.c_str(), &(local_address));
+    local_port = p;
     udt = new udtConnection();
     udt->SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
     try {
-        udt->Bind(sessionManager.remote_address, sessionManager.remote_port);
+        udt->Bind(local_address, local_port);
         udt->Listen();
     }
     catch (UException) {

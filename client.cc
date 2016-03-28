@@ -64,6 +64,6 @@ int main(int argc, char *argv[])
 
     UEpoll epoll;
     epoll.InitClient(local_address, local_port);
-    epoll.SetDestination(local_address, remote_port);
+    epoll.SetDestination(remote_address, remote_port);
     epoll.Loop();
 }
