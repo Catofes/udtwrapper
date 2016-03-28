@@ -4,6 +4,7 @@
 
 #include "sessionManager.hh"
 #include "error.hh"
+#include "random"
 
 SessionManager::SessionManager()
 {
@@ -91,7 +92,30 @@ uint32_t SessionManager::GetSessionCount()
 
 void SessionManager::GarbageCollection()
 {
+    int t = (int) time(NULL);
+    uint32_t s = GetSessionCount();
+    if (s > gc_limit || (std::rand() % 100000) / 100000. < gc_prob * (s - gc_start_size)) {
+        Log::Log("Start GC.", 3);
+        vector<int> remove_session_ids;
+        for (std::pair<int, Session *> u:session_store) {
+            if (t - u.second->GetTime() > 600) {
+                u.second->Close();
+                delete u;
+                remove_session_ids.push_back(u.first);
+            }
+            else if (u.second->GetStatus() == SessionSpace::CLOSE) {
+                u.second->Close();
+                delete u;
+                remove_session_ids.push_back(u.first);
+            }
+            if (remove_session_ids.size() > gc_max * GetSessionCount())
+                break;
+        }
+        for (int u:remove_session_ids) {
+            session_store.erase(u);
+        }
 
+    }
 }
 
 void SessionManager::SetEpoll(int epoll_id)

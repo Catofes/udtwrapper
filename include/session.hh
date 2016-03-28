@@ -29,9 +29,21 @@ public:
 
     void Rst();
 
-    inline int GetId()
+    void Close();
+
+    inline const int GetTime()
+    {
+        return active_time;
+    }
+
+    inline const int GetId()
     {
         return session_id;
+    }
+
+    inline const SessionSpace::SessionStatus GetStatus()
+    {
+        return status;
     }
 
     friend class SessionManager;
@@ -54,8 +66,6 @@ private:
     void Tcp2Udt();
 
     void Udt2Tcp();
-
-    void Close();
 
     void Fresh();
 

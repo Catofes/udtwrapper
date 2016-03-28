@@ -29,10 +29,12 @@ void Session::Close()
     status = SessionSpace::CLOSE;
     if (tcp.GetSocket() > 0) {
         UDT::epoll_remove_ssock(manager->GetEpoll(), tcp.GetSocket());
+        manager->tcp2session.erase(tcp.GetSocket());
         tcp.Close();
     }
     if (udt.GetSocket() > 0) {
         UDT::epoll_remove_usock(manager->GetEpoll(), udt.GetSocket());
+        manager->udt2session.erase(udt.GetSocket());
         udt.Close();
     }
     active_time = 0;

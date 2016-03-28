@@ -33,7 +33,7 @@ public:
 
     void SetEpoll(int epoll_id);
 
-    inline int GetEpoll()
+    inline const int GetEpoll()
     {
         return epoll;
     }
@@ -52,6 +52,12 @@ private:
     unordered_map<int, Session *> session_store;
     unordered_map<int, int> tcp2session;
     unordered_map<int, int> udt2session;
+
+    uint16_t gc_start_size = 100;
+    double gc_prob = 0.0003;
+    double gc_max = 0.1;
+    uint16_t gc_limit = 1000;
+
 };
 
 
