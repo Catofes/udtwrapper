@@ -94,7 +94,7 @@ void SessionManager::GarbageCollection()
 {
     int t = (int) time(NULL);
     uint32_t s = GetSessionCount();
-    if (s > gc_limit || (std::rand() % 100000) / 100000. < gc_prob * (s - gc_start_size)) {
+    if (s > gc_limit || (std::rand() % 100000) / 100000. < gc_prob * ((int) s - gc_start_size)) {
         Log::Log("Start GC.", 3);
         vector<int> remove_session_ids;
         for (std::pair<int, Session *> u:session_store) {
