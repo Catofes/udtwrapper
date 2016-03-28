@@ -4,11 +4,9 @@
 
 #include "tcpConnection.hh"
 #include "error.hh"
-
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <errno.h>
 
 
 tcpConnection::tcpConnection()
@@ -26,14 +24,13 @@ tcpConnection::~tcpConnection()
     Close();
 }
 
-int tcpConnection::Bind(std::string address, uint16_t port)
+int tcpConnection::Bind(uint32_t address, uint16_t port)
 {
     //Load Address
     memset(&bind_addr, 0, sizeof(bind_addr));
     bind_addr.sin_family = AF_INET;
     bind_addr.sin_port = htons(port);
-    if (!inet_aton(address.c_str(), &(bind_addr.sin_addr)))
-        throw std::runtime_error("Unknow Address.");
+    memcpy(&(bind_addr.sin_addr), &address, sizeof(uint32_t));
 
     //Generate udp socket
     Init();
@@ -57,14 +54,13 @@ int tcpConnection::Listen()
     return 0;
 }
 
-int tcpConnection::Connect(std::string address, uint16_t port)
+int tcpConnection::Connect(uint32_t address, uint16_t port)
 {
     if (tcp_socket == 0)
         Init();
 
-    if (inet_aton(address.c_str(), &(connect_addr.sin_addr)) == 0) {
-        throw TConnect::WrongIpAddress();
-    }
+    memcpy(&(connect_addr.sin_addr), &address, sizeof(uint32_t));
+
     connect_addr.sin_family = AF_INET;
     connect_addr.sin_port = htons(port);
     memset(&(connect_addr.sin_zero), '\0', 8);
@@ -88,4 +84,34 @@ int tcpConnection::Close()
     if (tcp_socket != 0) {
         close(tcp_socket);
     }
+    tcp_socket = 0;
+    return 0;
+}
+
+int tcpConnection::Read(char *buffer, uint16_t size)
+{
+    int s = (int) recv(tcp_socket, buffer, size, 0);
+    if (s < 0) {
+        switch (errno) {
+            case EAGAIN:
+                throw TConnect::EAgain();
+            default:
+                throw TConnect::EError();
+        }
+    }
+    return s;
+}
+
+int tcpConnection::Write(char *buffer, uint16_t size)
+{
+    int s = (int) send(tcp_socket, buffer, size, 0);
+    if (s < 0) {
+        switch (errno) {
+            case EAGAIN:
+                throw TConnect::EAgain();
+            default:
+                throw TConnect::EError();
+        }
+    }
+    return s;
 }

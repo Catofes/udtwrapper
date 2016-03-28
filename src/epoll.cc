@@ -27,15 +27,17 @@ void UEpoll::InitClient(string s, uint16_t p)
     if (epoll_id < 0)
         throw std::runtime_error("Cannot Init Epoll.");
     sessionManager.SetEpoll(epoll_id);
+    SetDestination(s, p);
     tcp = new tcpConnection();
+    tcp->SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
     try {
-        tcp->Bind(s, p);
+        tcp->Bind(sessionManager.remote_address, sessionManager.remote_port);
         tcp->Listen();
     }
     catch (UException) {
         throw std::runtime_error("Init Client Error. Exiting.");
     }
-    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN;
+    int epoll_opt = tcp->GetEvent();
     if (UDT::epoll_add_ssock(epoll_id, tcp->GetSocket(), &epoll_opt) < 0)
         throw std::runtime_error("Can't add socket to epoll. Exiting.");
 }
@@ -47,22 +49,24 @@ void UEpoll::InitServer(string s, uint16_t p)
     if (epoll_id < 0)
         throw std::runtime_error("Cannot Init Epoll.");
     sessionManager.SetEpoll(epoll_id);
+    SetDestination(s, p);
     udt = new udtConnection();
+    udt->SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
     try {
-        udt->Bind(s, p);
+        udt->Bind(sessionManager.remote_address, sessionManager.remote_port);
         udt->Listen();
     }
     catch (UException) {
         throw std::runtime_error("Init Client Error. Exiting.");
     }
-    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN;
+    int epoll_opt = udt->GetEvent();
     if (UDT::epoll_add_usock(epoll_id, udt->GetSocket(), &epoll_opt) < 0)
         throw std::runtime_error("Can't add socket to epoll. Exiting.");
 }
 
 void UEpoll::SetDestination(string remote_address, uint16_t remote_port)
 {
-    sessionManager.remote_address = remote_address;
+    inet_pton(AF_INET, remote_address.c_str(), &(sessionManager.remote_address));
     sessionManager.remote_port = remote_port;
 }
 
@@ -97,7 +101,12 @@ void UEpoll::HandleTcpRead()
         catch (UException) {
             continue;
         }
-        session->HandleTRead();
+        try {
+            session->HandleTRead();
+        }
+        catch (UException) {
+            session->Rst();
+        }
     }
 }
 
@@ -111,7 +120,12 @@ void UEpoll::HandleTcpWrite()
         catch (UException) {
             continue;
         }
-        session->HandleTWrite();
+        try {
+            session->HandleTWrite();
+        }
+        catch (UException) {
+            session->Rst();
+        }
     }
 }
 
@@ -132,7 +146,12 @@ void UEpoll::HandleUdtRead()
         catch (UException) {
             continue;
         }
-        session->HandleURead();
+        try {
+            session->HandleURead();
+        }
+        catch (UException) {
+            session->Rst();
+        }
     }
 }
 
@@ -146,7 +165,12 @@ void UEpoll::HandleUdtWrite()
         catch (UException) {
             continue;
         }
-        session->HandleUWrite();
+        try {
+            session->HandleUWrite();
+        }
+        catch (UException) {
+            session->Rst();
+        }
     }
 }
 
@@ -165,7 +189,7 @@ void UEpoll::AcceptTcp()
     Log::Log(str, 2);
 
     sessionManager.CreateSessionByTcp(new_socket);
-    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN;
+    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
     UDT::epoll_add_ssock(epoll_id, new_socket, &epoll_opt);
 }
 
@@ -184,6 +208,6 @@ void UEpoll::AcceptUdt()
     Log::Log(str, 2);
 
     sessionManager.CreateSessionByUdt(new_socket);
-    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN;
+    int epoll_opt = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR;
     UDT::epoll_add_usock(epoll_id, new_socket, &epoll_opt);
 }

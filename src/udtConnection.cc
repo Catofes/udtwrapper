@@ -25,14 +25,13 @@ udtConnection::~udtConnection()
     Close();
 }
 
-int udtConnection::Bind(std::string address, uint16_t port)
+int udtConnection::Bind(uint32_t address, uint16_t port)
 {
     //Load Address
     memset(&bind_addr, 0, sizeof(bind_addr));
     bind_addr.sin_family = AF_INET;
     bind_addr.sin_port = htons(port);
-    if (!inet_aton(address.c_str(), &(bind_addr.sin_addr)))
-        throw std::runtime_error("Unknow Address.");
+    memcpy(&(bind_addr.sin_addr), &address, sizeof(uint32_t));
 
     //Generate udp socket
     udp_socket = socket(PF_INET, SOCK_DGRAM, 0);
@@ -65,14 +64,13 @@ int udtConnection::Listen()
     return 0;
 }
 
-int udtConnection::Connect(std::string address, uint16_t port)
+int udtConnection::Connect(uint32_t address, uint16_t port)
 {
     if (udt_socket == 0)
         Init();
 
-    if (inet_aton(address.c_str(), &(connect_addr.sin_addr)) == 0) {
-        throw TConnect::WrongIpAddress();
-    }
+    memcpy(&(connect_addr.sin_addr), &address, sizeof(uint32_t));
+
     connect_addr.sin_family = AF_INET;
     connect_addr.sin_port = htons(port);
     memset(&(connect_addr.sin_zero), '\0', 8);
@@ -101,4 +99,37 @@ int udtConnection::Close()
     if (udp_socket != 0) {
         close(udp_socket);
     }
+    udt_socket = 0;
+    udp_socket = 0;
+    return 0;
+}
+
+int udtConnection::Read(char *buffer, uint16_t size)
+{
+    int s = UDT::recv(udt_socket, buffer, size, 0);
+    if (s == UDT::ERROR) {
+        auto error = UDT::getlasterror();
+        switch (error.getErrorCode()) {
+            case 6002:
+                throw UConnect::EAgain();
+            default:
+                throw UConnect::EError();
+        }
+    }
+    return s;
+}
+
+int udtConnection::Write(char *buffer, uint16_t size)
+{
+    int s = UDT::send(udt_socket, buffer, size, 0);
+    if (s == UDT::ERROR) {
+        auto error = UDT::getlasterror();
+        switch (error.getErrorCode()) {
+            case 6002:
+                throw UConnect::EAgain();
+            default:
+                throw UConnect::EError();
+        }
+    }
+    return s;
 }

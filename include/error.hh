@@ -23,14 +23,14 @@ namespace HeadSpace
     {
     public:
         ParseZero()
-        { Log::Log("Parse 0 Size Head. Skip.", 1); };
+        { Log::Log("Parse 0 Size Head. Skip.", 2); };
     };
 
     class Partial : UException
     {
     public:
         Partial()
-        { Log::Log("Particle Head.", 0); };
+        { Log::Log("Particle Head.", 1); };
     };
 
     class UnknownType : UException
@@ -56,6 +56,27 @@ namespace UConnect
         ConnectionFailed()
         { Log::Log("UDT Connection Failed.", 5); }
     };
+
+    class EAgain : UException
+    {
+    public:
+        EAgain()
+        { Log::Log("UDT EAgain.", 1); }
+    };
+
+    class EError : UException
+    {
+    public:
+        EError()
+        { Log::Log("UDT READ/WRITE ERROR. RST.", 5); }
+    };
+
+    class EFin : UException
+    {
+    public:
+        EFin()
+        { Log::Log("UDT Fin Received.", 2); }
+    };
 }
 
 namespace TConnect
@@ -72,6 +93,27 @@ namespace TConnect
     public:
         ConnectionFailed()
         { Log::Log("UDT Connection Failed.", 5); }
+    };
+
+    class EAgain : UException
+    {
+    public:
+        EAgain()
+        { Log::Log("TCP EAgain.", 1); }
+    };
+
+    class EError : UException
+    {
+    public:
+        EError()
+        { Log::Log("TCP READ/WRITE ERROR. RST.", 5); }
+    };
+
+    class EFin : UException
+    {
+    public:
+        EFin()
+        { Log::Log("TCP Fin Received.", 2); }
     };
 }
 
@@ -103,6 +145,23 @@ namespace EpollSpace
             str += UDT::getlasterror().getErrorMessage();
             Log::Log(str, 3);
         }
+    };
+}
+
+namespace SessionSpace
+{
+    class ErrorStatus : UException
+    {
+    public:
+        ErrorStatus()
+        { Log::Log("Error Session Status.", 3); }
+    };
+
+    class SendData2Fin : UException
+    {
+    public:
+        SendData2Fin()
+        { Log::Log("Send Data To Fin Socket.", 3); }
     };
 }
 #endif //UDTWRAPPER_ERROR_HH

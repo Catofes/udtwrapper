@@ -25,11 +25,15 @@ SessionManager::~SessionManager()
 Session *SessionManager::CreateSessionByTcp(int socket)
 {
     Session *s = new Session();
+    s->remote_address = remote_address;
+    s->remote_port = remote_port;
     s->tcp.SetSocket(socket);
+    s->tcp.SetStatus(Connection::PIPE);
     s->session_id = session_upper;
     s->manager = this;
     s->direction = SessionSpace::TCP2UDT;
     s->status = SessionSpace::INIT;
+    s->udt.SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
 
     session_store[s->session_id] = s;
     tcp2session[socket] = s->session_id;
@@ -41,11 +45,15 @@ Session *SessionManager::CreateSessionByTcp(int socket)
 Session *SessionManager::CreateSessionByUdt(int socket)
 {
     Session *s = new Session();
+    s->remote_address = remote_address;
+    s->remote_port = remote_port;
     s->udt.SetSocket(socket);
+    s->udt.SetStatus(Connection::PIPE);
     s->session_id = session_upper;
     s->manager = this;
     s->direction = SessionSpace::UDT2TCP;
     s->status = SessionSpace::INIT;
+    s->udt.SetEvent(EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_ERR);
 
     session_store[s->session_id] = s;
     udt2session[socket] = s->session_id;

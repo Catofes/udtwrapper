@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <udt.h>
+#include "head.hh"
 
 using namespace std;
 
@@ -29,13 +30,37 @@ public:
         udt_socket = s;
     }
 
-    int Connect(std::string address, uint16_t port);
+    inline void SetStatus(Connection::ConnectionStatus s)
+    {
+        status = s;
+    }
 
-    int Bind(std::string address, uint16_t port);
+    inline int GetEvent()
+    {
+        return event;
+    }
+
+    inline void SetEvent(int e)
+    {
+        event = e;
+    }
+
+    inline void SendFin()
+    {
+        fin = true;
+    }
+
+    int Connect(uint32_t address, uint16_t port);
+
+    int Bind(uint32_t address, uint16_t port);
 
     int Listen();
 
     int Close();
+
+    int Read(char *buffer, uint16_t size);
+
+    int Write(char *buffer, uint16_t size);
 
     friend class Session;
 
@@ -46,8 +71,14 @@ private:
     UDTSOCKET udt_socket;
     UDPSOCKET udp_socket;
 
+    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR;
+
+    Connection::ConnectionStatus status;
+
     struct sockaddr_in bind_addr;
     struct sockaddr_in connect_addr;
+
+    bool fin = false;
 };
 
 #endif //UDTWRAPPER_UDTCONNECTION_HH

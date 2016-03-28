@@ -33,13 +33,20 @@ public:
 
     void SetEpoll(int epoll_id);
 
+    inline int GetEpoll()
+    {
+        return epoll;
+    }
+
     friend class UEpoll;
+
+    friend class Session;
 
 private:
     int session_upper;
     int epoll;
 
-    string remote_address;
+    uint32_t remote_address;
     uint16_t remote_port;
 
     unordered_map<int, Session *> session_store;

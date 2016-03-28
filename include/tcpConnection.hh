@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <udt.h>
+#include "head.hh"
 
 class tcpConnection
 {
@@ -27,13 +28,42 @@ public:
         tcp_socket = socket;
     }
 
-    int Connect(std::string address, uint16_t port);
+    inline void SetStatus(Connection::ConnectionStatus s)
+    {
+        status = s;
+    }
 
-    int Bind(std::string address, uint16_t port);
+    inline int GetEvent()
+    {
+        return event;
+    }
+
+    inline void SetEvent(int e)
+    {
+        event = e;
+    }
+
+    inline void SendFin()
+    {
+        shutdown(tcp_socket, SHUT_WR);
+    }
+
+    inline void SetFin()
+    {
+        fin = true;
+    }
+
+    int Connect(uint32_t address, uint16_t port);
+
+    int Bind(uint32_t address, uint16_t port);
 
     int Listen();
 
     int Close();
+
+    int Read(char *buffer, uint16_t size);
+
+    int Write(char *buffer, uint16_t size);
 
     friend class Session;
 
@@ -43,8 +73,14 @@ private:
 
     int tcp_socket;
 
+    Connection::ConnectionStatus status;
+
+    int event = EPOLLOpt::UDT_EPOLL_IN | EPOLLOpt::UDT_EPOLL_OUT | EPOLLOpt::UDT_EPOLL_ERR;
+
     struct sockaddr_in bind_addr;
     struct sockaddr_in connect_addr;
+
+    bool fin = false;
 };
 
 

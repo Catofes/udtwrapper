@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 
-const int BS=2048;
+const uint16_t BS = 2048;
+const uint16_t DS = BS - 48;
 
 namespace SessionSpace
 {
@@ -16,9 +17,7 @@ namespace SessionSpace
         INIT,
         CONNECTING,
         PIPE,
-        UPLOADING,
-        DOWNLOADING,
-        FIN,
+        CLOSE,
     };
 
     enum Direction
@@ -32,11 +31,11 @@ namespace Connection
 {
     enum ConnectionStatus
     {
+        INIT,
         CONNECTING,
-        READING,
-        WRITING,
-        FIN,
-        CLOSED,
+        PIPE,
+        WAITING,
+        BLOCKING,
     };
 }
 
@@ -68,6 +67,8 @@ public:
 
     int Read(char *data, uint16_t size);
 
+    int Pack(char *data);
+
 private:
     int ReadConnect(char *data, uint16_t size);
 
@@ -78,6 +79,22 @@ private:
 
     inline int ReadRST(char *data, uint16_t size)
     { return 0; }
+
+    int WriteConnect(char *data);
+
+    int WriteData(char *data);
+
+    inline int WriteFin(char *data)
+    {
+        data[0] = type;
+        return 1;
+    }
+
+    inline int WriteRST(char *data)
+    {
+        data[0] = type;
+        return 1;
+    }
 
 };
 
