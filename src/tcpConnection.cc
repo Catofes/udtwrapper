@@ -108,7 +108,7 @@ int tcpConnection::Read(char *buffer, uint16_t size)
     return s;
 }
 
-int tcpConnection::Write(char *buffer, uint16_t size)
+int tcpConnection::Write(const char *buffer, uint16_t size)
 {
     int s = (int) send(tcp_socket, buffer, size, 0);
     if (s < 0) {

@@ -33,7 +33,8 @@ public:
 
     void SetEpoll(int epoll_id);
 
-    inline const int GetEpoll()
+    // it makes no sense to return a const primitive type
+    int GetEpoll() const
     {
         return epoll;
     }
@@ -53,10 +54,11 @@ private:
     unordered_map<int, int> tcp2session;
     unordered_map<int, int> udt2session;
 
-    uint16_t gc_start_size = 100;
-    double gc_prob = 0.0003;
-    double gc_max = 0.1;
-    uint16_t gc_limit = 1000;
+    // static const members will be compiled to literal values thus have better performance
+    static const uint16_t gc_start_size = 100;
+    static const double gc_prob = 0.0003;
+    static const double gc_max = 0.1;
+    static const uint16_t gc_limit = 1000;
 
 };
 

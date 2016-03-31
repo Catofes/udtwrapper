@@ -20,32 +20,32 @@ public:
 
     ~udtConnection();
 
-    inline int GetSocket()
+    int GetSocket() const
     {
         return udt_socket;
     }
 
-    inline void SetSocket(int s)
+    void SetSocket(int s)
     {
         udt_socket = s;
     }
 
-    inline void SetStatus(Connection::ConnectionStatus s)
+    void SetStatus(Connection::ConnectionStatus s)
     {
         status = s;
     }
 
-    inline int GetEvent()
+    int GetEvent() const
     {
         return event;
     }
 
-    inline void SetEvent(int e)
+    void SetEvent(int e)
     {
         event = e;
     }
 
-    inline void SendFin()
+    void SendFin()
     {
         fin = true;
     }
@@ -60,7 +60,7 @@ public:
 
     int Read(char *buffer, uint16_t size);
 
-    int Write(char *buffer, uint16_t size);
+    int Write(const char *buffer, uint16_t size);
 
     friend class Session;
 
