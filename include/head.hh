@@ -41,12 +41,13 @@ namespace Connection
 
 namespace HeadSpace
 {
-    enum HeadType
+    enum HeadType : uint8_t
     {
         CONNECT,
         DATA,
         FIN,
         RST,
+        HeadTypeNum
     };
 }
 
@@ -54,47 +55,27 @@ class Head
 {
 public:
     HeadSpace::HeadType type;
-    uint8_t head_length;
-    uint32_t address;
-    uint16_t port;
-    uint16_t data_length;
-    bool flag;
 
-    Head()
-    {
-        flag = false;
-    }
+    // not necessarily the best way, just to tell you it works
+    union {
+        struct {
+            uint32_t address;
+            uint16_t port;
+        };
 
-    int Read(char *data, uint16_t size);
+        uint16_t data_length;
+    };
 
-    int Pack(char *data);
+    //uint8_t head_length;
+    //bool flag = false;
+
+    int Read(const char *data, uint16_t size);
+
+    int Pack(char *data) const;
 
 private:
-    int ReadConnect(char *data, uint16_t size);
-
-    int ReadData(char *data, uint16_t size);
-
-    inline int ReadFin(char *data, uint16_t size)
-    { return 0; }
-
-    inline int ReadRST(char *data, uint16_t size)
-    { return 0; }
-
-    int WriteConnect(char *data);
-
-    int WriteData(char *data);
-
-    inline int WriteFin(char *data)
-    {
-        data[0] = type;
-        return 1;
-    }
-
-    inline int WriteRST(char *data)
-    {
-        data[0] = type;
-        return 1;
-    }
+    // { CONNECT, DATA, FIN, RST }
+    static const int sizeOfType[HeadTypeNum] = { 7, 3, 0, 0 };
 
 };
 

@@ -31,17 +31,18 @@ public:
 
     void Close();
 
-    inline const int GetTime()
+    // member functions defined in class definition are always inlined
+    int GetTime() const
     {
         return active_time;
     }
 
-    inline const int GetId()
+    int GetId() const
     {
         return session_id;
     }
 
-    inline const SessionSpace::SessionStatus GetStatus()
+    SessionSpace::SessionStatus GetStatus() const
     {
         return status;
     }
@@ -73,7 +74,7 @@ private:
 
     void BlockTcp(bool flag);
 
-    inline void Log(string s, char l)
+    void Log(const string &s, char l)
     {
         string str = "Session ";
         str += to_string(session_id);

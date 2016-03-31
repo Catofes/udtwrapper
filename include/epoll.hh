@@ -22,11 +22,11 @@ public:
 
     ~UEpoll();
 
-    void InitServer(string listen_address, uint16_t listen_port);
+    void InitServer(const string &listen_address, uint16_t listen_port);
 
-    void InitClient(string listen_address, uint16_t listen_port);
+    void InitClient(const string &listen_address, uint16_t listen_port);
 
-    void SetDestination(string remote_address, uint16_t remote_port);
+    void SetDestination(const string &remote_address, uint16_t remote_port);
 
     void Loop();
 

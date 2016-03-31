@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <getopt.h>
-#include <sstream>
+#include <cstdlib>
 #include "epoll.hh"
 
 using namespace std;
@@ -17,30 +17,21 @@ int main(int argc, char *argv[])
     uint16_t local_port = 0;
     uint16_t remote_port = 0;
     extern char *optarg;
-    std::stringstream ss;
     while (true) {
         const int option = getopt(argc, argv, "a:b:c:d:e");
         if (option == -1) break;
         switch (option) {
             case 'a':
-                ss.clear();
-                ss.str(optarg);
-                ss >> local_address;
+                local_address = optarg;
                 break;
             case 'b':
-                ss.clear();
-                ss.str(optarg);
-                ss >> local_port;
+                local_port = atoi(optarg);
                 break;
             case 'c':
-                ss.clear();
-                ss.str(optarg);
-                ss >> remote_address;
+                remote_address = optarg;
                 break;
             case 'd':
-                ss.clear();
-                ss.str(optarg);
-                ss >> remote_port;
+                remote_port = atoi(optarg);
                 break;
             case 'e':
                 break;
