@@ -202,7 +202,6 @@ void Session::DownloadWrite()
 void Session::UploadRead()
 {
     Log("Upload Read.", 1);
-    Head head;
     switch (direction) {
         case SessionSpace::TCP2UDT:
             upload_read_offset += tcp.Read(upload_read_buffer + upload_read_offset, DS - upload_read_offset);
@@ -216,7 +215,6 @@ void Session::UploadRead()
 void Session::DownloadRead()
 {
     Log("Download Read.", 1);
-    Head head;
     switch (direction) {
         case SessionSpace::UDT2TCP:
             download_read_offset += tcp.Read(download_read_buffer + download_read_offset, DS - download_read_offset);
@@ -229,7 +227,6 @@ void Session::DownloadRead()
 
 void Session::SendFin(SessionSpace::Direction d)
 {
-    Head head;
     switch (d) {
         case SessionSpace::TCP2UDT:
             Log("Send Fin to UDT.", 1);
@@ -292,7 +289,6 @@ void Session::UdtReadInit()
 
 void Session::Tcp2Udt()
 {
-    Head head;
     switch (direction) {
         case SessionSpace::TCP2UDT:
             if (udt.fin)
@@ -342,7 +338,6 @@ void Session::Tcp2Udt()
 
 void Session::Udt2Tcp()
 {
-    Head head;
     switch (direction) {
         case SessionSpace::TCP2UDT:
             try {

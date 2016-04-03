@@ -31,17 +31,17 @@ public:
 
     void Close();
 
-    inline const int GetTime()
+    int GetTime() const
     {
         return active_time;
     }
 
-    inline const int GetId()
+    int GetId() const
     {
         return session_id;
     }
 
-    inline const SessionSpace::SessionStatus GetStatus()
+    SessionSpace::SessionStatus GetStatus() const
     {
         return status;
     }
@@ -73,7 +73,7 @@ private:
 
     void BlockTcp(bool flag);
 
-    inline void Log(string s, char l)
+    void Log(string s, char l)
     {
         string str = "Session ";
         str += to_string(session_id);
@@ -93,6 +93,7 @@ private:
     udtConnection udt;
     tcpConnection tcp;
 
+    Head head;
     char upload_read_buffer[BS * 2];
     char upload_write_buffer[BS * 2];
     char download_read_buffer[BS * 2];

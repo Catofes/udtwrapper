@@ -41,12 +41,12 @@ namespace Connection
 
 namespace HeadSpace
 {
-    enum HeadType
+    enum HeadType : uint8_t
     {
         CONNECT,
         DATA,
         FIN,
-        RST,
+        RST
     };
 }
 

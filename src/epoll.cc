@@ -21,7 +21,7 @@ UEpoll::~UEpoll()
     UDT::epoll_release(epoll_id);
 }
 
-void UEpoll::InitClient(string s, uint16_t p)
+void UEpoll::InitClient(const string &s, uint16_t p)
 {
     type = EpollType::Client;
     epoll_id = UDT::epoll_create();
@@ -46,7 +46,7 @@ void UEpoll::InitClient(string s, uint16_t p)
         throw std::runtime_error("Can't add socket to epoll. Exiting.");
 }
 
-void UEpoll::InitServer(string s, uint16_t p)
+void UEpoll::InitServer(const string &s, uint16_t p)
 {
     type = EpollType::Server;
     epoll_id = UDT::epoll_create();
@@ -71,7 +71,7 @@ void UEpoll::InitServer(string s, uint16_t p)
         throw std::runtime_error("Can't add socket to epoll. Exiting.");
 }
 
-void UEpoll::SetDestination(string remote_address, uint16_t remote_port)
+void UEpoll::SetDestination(const string &remote_address, uint16_t remote_port)
 {
     inet_pton(AF_INET, remote_address.c_str(), &(sessionManager.remote_address));
     sessionManager.remote_port = remote_port;

@@ -124,7 +124,7 @@ int udtConnection::Read(char *buffer, uint16_t size)
     return s;
 }
 
-int udtConnection::Write(char *buffer, uint16_t size)
+int udtConnection::Write(const char *buffer, uint16_t size)
 {
     int s = UDT::send(udt_socket, buffer, size, 0);
     if (s == UDT::ERROR) {

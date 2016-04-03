@@ -18,37 +18,37 @@ public:
 
     ~tcpConnection();
 
-    inline int GetSocket()
+    int GetSocket() const
     {
         return tcp_socket;
     }
 
-    inline void SetSocket(int socket)
+    void SetSocket(int socket)
     {
         tcp_socket = socket;
     }
 
-    inline void SetStatus(Connection::ConnectionStatus s)
+    void SetStatus(Connection::ConnectionStatus s)
     {
         status = s;
     }
 
-    inline int GetEvent()
+    int GetEvent() const
     {
         return event;
     }
 
-    inline void SetEvent(int e)
+    void SetEvent(int e)
     {
         event = e;
     }
 
-    inline void SendFin()
+    void SendFin()
     {
         shutdown(tcp_socket, SHUT_WR);
     }
 
-    inline void SetFin()
+    void SetFin()
     {
         fin = true;
     }
@@ -63,7 +63,7 @@ public:
 
     int Read(char *buffer, uint16_t size);
 
-    int Write(char *buffer, uint16_t size);
+    int Write(const char *buffer, uint16_t size);
 
     int CheckWrite();
 
