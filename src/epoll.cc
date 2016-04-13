@@ -14,11 +14,13 @@ UEpoll::UEpoll()
 {
     signal(SIGPIPE, SIG_IGN);
     epoll_id = 0;
+    UDT::startup();
 }
 
 UEpoll::~UEpoll()
 {
     UDT::epoll_release(epoll_id);
+    UDT::cleanup();
 }
 
 void UEpoll::InitClient(const string &s, uint16_t p)

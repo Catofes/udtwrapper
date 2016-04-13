@@ -240,11 +240,13 @@ void Session::SendFin(SessionSpace::Direction d)
             if (direction == SessionSpace::TCP2UDT) {
                 upload_write_length += head.Pack(upload_write_buffer + upload_write_offset + upload_write_length);
                 UploadWrite();
+                upload_fin_flag = true;
             }
             else {
                 download_write_length += head.Pack(
                         download_write_buffer + download_write_offset + download_write_length);
                 DownloadWrite();
+                download_fin_flag = true;
             }
             udt.SendFin();
             break;
@@ -260,8 +262,19 @@ void Session::SendFin(SessionSpace::Direction d)
             else {
                 tcp.SetFin();
             }
+            if (direction == SessionSpace::TCP2UDT)
+                download_fin_flag = true;
+            else
+                upload_fin_flag = true;
             break;
     }
+    ArgueClose();
+}
+
+void Session::ArgueClose()
+{
+    if (upload_fin_flag && download_fin_flag)
+        Close();
 }
 
 void Session::TcpReadInit()

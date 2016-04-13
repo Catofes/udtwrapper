@@ -4,12 +4,12 @@
 
 #include "log.hh"
 
-void Log::Log(const string input, char level)
+void Log::Log(const string &input, char level)
 {
     Log::StdLog(input, level);
 }
 
-void Log::StdLog(const string input, char level)
+void Log::StdLog(const string &input, char level)
 {
 //    if (level < 3)
 //        return;

@@ -25,3 +25,5 @@ add_executable(server server.cc)
 target_link_libraries(server udt4wrapper ${UDT4_LIBS})
 add_executable(client client.cc)
 target_link_libraries(client udt4wrapper ${UDT4_LIBS})
+
+add_subdirectory(test)
