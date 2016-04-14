@@ -452,6 +452,8 @@ void Session::HandleTRead()
             case SessionSpace::CONNECTING:
                 if (direction == SessionSpace::UDT2TCP)
                     tcp.CheckWrite();
+                else
+                    BlockTcp(true);
                 break;
             case SessionSpace::PIPE:
                 Tcp2Udt();
