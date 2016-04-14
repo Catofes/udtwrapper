@@ -308,6 +308,7 @@ void Session::Tcp2Udt()
                 throw SessionSpace::SendData2Fin();
             switch (status) {
                 case SessionSpace::INIT:
+                    throw SessionSpace::ErrorStatus();
                     break;
                 case SessionSpace::CONNECTING:
                     Log("Send Connect Command.", 1);
@@ -330,7 +331,8 @@ void Session::Tcp2Udt()
                     upload_read_offset = 0;
                     UploadWrite();
                     break;
-                default:
+                case SessionSpace::CLOSE:
+                    this->Close();
                     break;
             }
             break;
@@ -454,11 +456,12 @@ void Session::HandleTRead()
             case SessionSpace::PIPE:
                 Tcp2Udt();
                 break;
-            default:
+            case SessionSpace::CLOSE:
+                Close();
                 break;
         }
     }
-    catch (TConnect::EAgain) { }
+    catch (TConnect::EAgain) { Log("EAgain", 0); }
     catch (TConnect::EFin) { SendFin(SessionSpace::TCP2UDT); }
     catch (TConnect::EError) { Rst(); }
 }
@@ -484,7 +487,8 @@ void Session::HandleTWrite()
                 else
                     DownloadWrite();
                 break;
-            default:
+            case SessionSpace::CLOSE:
+                Close();
                 break;
         }
     }
@@ -503,7 +507,8 @@ void Session::HandleURead()
             case SessionSpace::PIPE:
                 Udt2Tcp();
                 break;
-            default:
+            case SessionSpace::CLOSE:
+                Close();
                 break;
         }
     }
@@ -531,7 +536,8 @@ void Session::HandleUWrite()
                 else
                     DownloadWrite();
                 break;
-            default:
+            case SessionSpace::CLOSE:
+                Close();
                 break;
         }
     }
