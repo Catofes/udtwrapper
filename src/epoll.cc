@@ -109,8 +109,9 @@ void UEpoll::HandleTcpRead()
             session = sessionManager.GetSessionByTcp(t);
         }
         catch (UException) {
-            Log::Log("Unknown Session.", 3);
+            Log::Log("Unknown Session From TCP.", 3);
             UDT::epoll_remove_ssock(epoll_id, t);
+            continue;
         }
         try {
             session->HandleTRead();
@@ -129,8 +130,9 @@ void UEpoll::HandleTcpWrite()
             session = sessionManager.GetSessionByTcp(t);
         }
         catch (UException) {
-            Log::Log("Unknown Session.", 3);
+            Log::Log("Unknown Session From TCP.", 3);
             UDT::epoll_remove_ssock(epoll_id, t);
+            continue;
         }
         try {
             session->HandleTWrite();
@@ -156,8 +158,9 @@ void UEpoll::HandleUdtRead()
             session = sessionManager.GetSessionByUdt(u);
         }
         catch (UException) {
-            Log::Log("Unknown Session.", 3);
+            Log::Log("Unknown Session From UDT.", 3);
             UDT::epoll_remove_usock(epoll_id, u);
+            continue;
         }
         try {
             session->HandleURead();
@@ -176,8 +179,9 @@ void UEpoll::HandleUdtWrite()
             session = sessionManager.GetSessionByUdt(u);
         }
         catch (UException) {
-            Log::Log("Unknown Session.", 3);
+            Log::Log("Unknown Session From UDT.", 3);
             UDT::epoll_remove_usock(epoll_id, u);
+            continue;
         }
         try {
             session->HandleUWrite();

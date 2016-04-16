@@ -37,7 +37,7 @@ namespace HeadSpace
     {
     public:
         UnknownType()
-        { Log::Log("Unknow Type", 5); };
+        { Log::Log("Unknown Type", 5); };
     };
 }
 
