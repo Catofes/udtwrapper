@@ -111,7 +111,6 @@ void UEpoll::HandleTcpRead()
         catch (UException) {
             Log::Log("Unknown Session From TCP.", 3);
             UDT::epoll_remove_ssock(epoll_id, t);
-            UDT::epoll_remove_ssock(epoll_id, t);
             shutdown(t, SHUT_RDWR);
             continue;
         }
@@ -133,7 +132,6 @@ void UEpoll::HandleTcpWrite()
         }
         catch (UException) {
             Log::Log("Unknown Session From TCP.", 3);
-            UDT::epoll_remove_ssock(epoll_id, t);
             UDT::epoll_remove_ssock(epoll_id, t);
             shutdown(t, SHUT_RDWR);
             continue;
@@ -163,9 +161,8 @@ void UEpoll::HandleUdtRead()
         }
         catch (UException) {
             Log::Log("Unknown Session From UDT.", 3);
+            UDT::epoll_remove_usock(epoll_id, u);
             UDT::close(u);
-            UDT::epoll_remove_usock(epoll_id, u);
-            UDT::epoll_remove_usock(epoll_id, u);
             continue;
         }
         try {
@@ -186,9 +183,8 @@ void UEpoll::HandleUdtWrite()
         }
         catch (UException) {
             Log::Log("Unknown Session From UDT.", 3);
+            UDT::epoll_remove_usock(epoll_id, u);
             UDT::close(u);
-            UDT::epoll_remove_usock(epoll_id, u);
-            UDT::epoll_remove_usock(epoll_id, u);
             continue;
         }
         try {
